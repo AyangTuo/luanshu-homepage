@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>栾树 LUANSHU · 个人主页</title>
+<meta name="description" content="栾树的个人空间。一个普通人的线上小屋：关于我、在做的事、一些小作品与联系方式。保持好奇，慢慢生长。">
+<meta name="author" content="栾树">
+<meta name="theme-color" content="#101410">
+<meta property="og:type" content="website">
+<meta property="og:title" content="栾树 LUANSHU · 个人主页">
+<meta property="og:description" content="一个人，一片自己的天地。保持好奇，慢慢生长。">
+<meta property="og:url" content="https://luanshu.de5.net">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://luanshu.de5.net">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23c8fa75'/%3E%3Ctext x='18' y='47' font-size='44' font-family='Arial' font-weight='bold' fill='%23161b16'%3EL%3C/text%3E%3C/svg%3E">
+<style>
+/* ============ 基础 ============ */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:#101410;color:#f4f5ef;font-family:Inter,'Microsoft YaHei',-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(760px 520px at 78% 4%,#c8fa751f,transparent 62%),radial-gradient(620px 520px at 2% 96%,#3d6f5a24,transparent 60%)}
+a{color:inherit;text-decoration:none}
+button{font:inherit}
+img,svg{max-width:100%}
+::selection{background:#c8fa75;color:#101410}
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #c8fa75;outline-offset:6px;border-radius:4px}
+.skip{position:absolute;left:14px;top:-70px;z-index:60;background:#c8fa75;color:#101410;padding:12px 20px;border-radius:26px;font-size:14px;transition:top .25s}
+.skip:focus{top:14px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.shell{max-width:1440px;margin:auto;padding:0 6%}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#0c100c}
+::-webkit-scrollbar-thumb{background:#2c362b;border-radius:20px;border:2px solid #0c100c}
+::-webkit-scrollbar-thumb:hover{background:#c8fa75}
+
+/* ============ 顶部进度条 + 页头 ============ */
+.progress{position:fixed;top:0;left:0;height:2px;width:100%;transform:scaleX(0);transform-origin:0 50%;background:linear-gradient(90deg,#c8fa75,#8ff0c4);z-index:40}
+header{position:sticky;top:0;z-index:30;height:112px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff20;background:#101410cc;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.brand{font-size:22px;font-weight:750;letter-spacing:2px;display:flex;align-items:center;gap:12px}
+.mark{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#c8fa75;color:#101410;font-size:23px;letter-spacing:0;transition:transform .4s}
+.brand:hover .mark{transform:rotate(-14deg) scale(1.06)}
+nav{display:flex;gap:32px;font-size:14px;color:#bec3b8}
+nav a{position:relative;transition:color .25s}
+nav a::after{content:"";position:absolute;left:0;bottom:-7px;width:100%;height:1px;background:#c8fa75;transform:scaleX(0);transform-origin:0;transition:transform .3s}
+nav a:hover{color:#c8fa75}
+nav a:hover::after,nav a.is-active::after{transform:scaleX(1)}
+nav a.is-active{color:#c8fa75}
+
+/* ============ Hero ============ */
+.hero{min-height:680px;display:grid;grid-template-columns:1.08fr 1fr;align-items:center;gap:46px;padding:80px 0 70px}
+.eyebrow{font-size:13px;letter-spacing:3px;color:#c8fa75;margin-bottom:28px;display:flex;align-items:center;gap:12px}
+.eyebrow::before{content:"";width:30px;height:1px;background:#c8fa75}
+.hero h1{font-weight:500;font-size:clamp(46px,5.4vw,84px);line-height:1.2;letter-spacing:-3px;margin:0 0 30px}
+.hero h1 span{color:#c8fa75}
+.intro{font-size:18px;line-height:1.9;color:#b3bbaf;margin:0 0 34px}
+.actions{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+.primary{background:#c8fa75;color:#172012;padding:16px 25px;border-radius:30px;display:inline-flex;gap:28px;align-items:center;font-size:15px;transition:background .3s,transform .3s,box-shadow .3s}
+.primary:hover{background:#dcffa5;transform:translateY(-2px);box-shadow:0 14px 30px -12px #c8fa7599}
+.primary .arw{transition:transform .3s}
+.primary:hover .arw{transform:translate(3px,-3px)}
+.ghost{border:1px solid #ffffff33;color:#e8ede3;padding:15px 24px;border-radius:30px;font-size:15px;transition:border-color .3s,color .3s,background .3s}
+.ghost:hover{border-color:#c8fa75;color:#c8fa75;background:#c8fa751a}
+.domain{font-size:13px;letter-spacing:1px;color:#8f998a}
+
+/* 字体海报 */
+.poster{aspect-ratio:1/1.04;background:#c8fa75;color:#172012;border-radius:3px;position:relative;overflow:hidden;padding:26px;transform:rotate(3deg);box-shadow:15px 18px 0 #20291d;display:flex;flex-direction:column;justify-content:space-between;will-change:transform}
+.poster::after{content:"";position:absolute;inset:0;background-image:radial-gradient(#17201226 1px,transparent 1px);background-size:9px 9px;opacity:.55;pointer-events:none}
+.poster-top,.poster-bottom{display:flex;justify-content:space-between;font-size:12px;letter-spacing:2px;position:relative;z-index:1}
+.type-art{font-size:clamp(76px,9vw,132px);line-height:.88;font-weight:850;letter-spacing:-8px;transform:rotate(-9deg);margin-left:-6px}
+.type-art span{display:block}
+.type-art span:last-child{-webkit-text-stroke:2px #172012;color:transparent}
+.poster-note{font-size:13px;letter-spacing:4px;margin-top:20px}
+.poster-mid{position:relative;z-index:1}
+
+/* 数字统计 */
+.stats{display:grid;grid-template-columns:repeat(3,auto);gap:38px;margin:46px 0 0;padding:0}
+.stats li{border-left:1px solid #ffffff26;padding-left:16px}
+.stats dt{font-size:clamp(24px,2.4vw,34px);font-weight:600;color:#c8fa75;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.stats dd{margin:6px 0 0;font-size:12px;letter-spacing:2px;color:#8f998a}
+.stats li{list-style:none}
+
+/* ============ 跑马灯条 ============ */
+.strip{border-top:1px solid #ffffff20;border-bottom:1px solid #ffffff20;padding:23px 0;display:flex;align-items:center;justify-content:space-between;color:#a6afa0;font-size:13px;letter-spacing:2px}
+.strip strong{color:#e8ede3;font-size:14px;font-weight:400}
+.marquee{overflow:hidden;border-bottom:1px solid #ffffff20;padding:16px 0;background:#0c110c;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.marquee-track{display:inline-flex;gap:44px;padding-right:44px;animation:slide 26s linear infinite;font-size:15px;letter-spacing:6px;color:#c8fa75;text-transform:uppercase}
+.marquee span{opacity:.28}
+.marquee:hover .marquee-track{animation-play-state:paused}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* ============ 通用区块 ============ */
+section{scroll-margin-top:96px}
+.section-head{display:grid;grid-template-columns:1fr 2fr;gap:50px;align-items:end;border-top:1px solid #ffffff20;padding-top:26px;margin-bottom:56px}
+.section-label{font-size:13px;letter-spacing:2px;color:#a4ad9f}
+.section-label b{display:block;color:#c8fa75;font-weight:600;margin-bottom:6px}
+.section-head h2{font-size:clamp(27px,3vw,40px);font-weight:400;line-height:1.5;margin:0;letter-spacing:-1px}
+.section-head h2 em{font-style:normal;color:#c8fa75}
+.section-head p{margin:16px 0 0;font-size:15px;line-height:1.9;color:#8f998a;max-width:560px}
+.about{padding:90px 0 96px;display:grid;grid-template-columns:1fr 2fr;gap:50px}
+.about h2{font-size:clamp(27px,3vw,40px);font-weight:400;line-height:1.6;margin:0 0 20px}
+.about p{font-size:16px;line-height:1.9;color:#a4ad9f;max-width:600px}
+.about p+p{margin-top:-4px}
+.about em{font-style:normal;color:#c8fa75}
+
+/* ============ 兴趣标签 ============ */
+.interests{padding:8px 0 96px}
+.tags{display:flex;flex-wrap:wrap;gap:12px}
+.tags li{list-style:none;border:1px solid #ffffff26;border-radius:30px;padding:12px 22px;font-size:14px;color:#c2c9bd;transition:all .3s;cursor:default}
+.tags li:hover{border-color:#c8fa75;color:#c8fa75;background:#c8fa7514;transform:translateY(-3px)}
+.tags li b{color:#c8fa75;font-weight:600;margin-right:8px;font-size:12px;letter-spacing:1px}
+.tags li:hover b{color:#e8ffc0}
+
+/* ============ 作品卡片 ============ */
+.works{padding:8px 0 96px}
+.work-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+.card{border:1px solid #ffffff1f;border-radius:14px;padding:32px;background:linear-gradient(160deg,#161c16,#121712);position:relative;overflow:hidden;transition:transform .4s cubic-bezier(.2,.7,.2,1),border-color .4s,background .4s,box-shadow .4s;display:flex;flex-direction:column;min-height:262px}
+.card::before{content:"";position:absolute;inset:-40% 30% auto auto;width:220px;height:220px;background:radial-gradient(circle,#c8fa7533,transparent 70%);opacity:0;transition:opacity .45s;pointer-events:none}
+.card:hover{transform:translateY(-6px);border-color:#c8fa7580;box-shadow:0 26px 50px -26px #000000cc}
+.card:hover::before{opacity:1}
+.card .no{font-size:12px;letter-spacing:3px;color:#8f998a;transition:color .3s}
+.card:hover .no{color:#c8fa75}
+.card h3{margin:20px 0 12px;font-size:22px;font-weight:600;letter-spacing:-.4px;transition:color .3s}
+.card:hover h3{color:#dcffa5}
+.card p{margin:0;font-size:15px;line-height:1.85;color:#a4ad9f;max-width:480px}
+.tagsline{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:26px;list-style:none}
+.tagsline li{font-size:12px;letter-spacing:1px;color:#98a292;border:1px solid #ffffff1f;border-radius:20px;padding:6px 13px;transition:all .3s}
+.card:hover .tagsline li{border-color:#ffffff33;color:#cdd5c8}
+.card .more{margin-top:22px;font-size:13px;letter-spacing:1px;color:#c8fa75;opacity:0;transform:translateY(6px);transition:all .4s}
+.card:hover .more{opacity:1;transform:none}
+.card.wide{grid-column:span 2}
+.card.wide p{max-width:640px}
+
+/* ============ 时间线 ============ */
+.timeline-sec{padding:8px 0 96px}
+.timeline{position:relative;list-style:none;margin:0;padding:6px 0 6px 34px}
+.timeline::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:1px;background:#ffffff26}
+.timeline li{position:relative;padding:0 0 40px}
+.timeline li:last-child{padding-bottom:0}
+.timeline li::before{content:"";position:absolute;left:-34px;top:8px;width:11px;height:11px;border-radius:50%;border:1px solid #c8fa7580;background:#101410;transition:background .5s,border-color .5s,box-shadow .5s}
+.timeline li.in::before{background:#c8fa75;border-color:#c8fa75;box-shadow:0 0 0 5px #c8fa7522}
+.timeline time{font-size:12px;letter-spacing:3px;color:#8f998a}
+.timeline h3{margin:12px 0 8px;font-size:19px;font-weight:600;letter-spacing:-.2px}
+.timeline p{margin:0;font-size:15px;line-height:1.85;color:#a4ad9f;max-width:620px}
+
+/* ============ 联系 ============ */
+.contact{padding:88px 0 100px;border-top:1px solid #ffffff20}
+.contact h2{font-size:clamp(30px,3.6vw,48px);font-weight:400;line-height:1.45;margin:0 0 18px;letter-spacing:-1.2px;max-width:760px}
+.contact h2 em{font-style:normal;color:#c8fa75}
+.contact .lead{font-size:16px;line-height:1.9;color:#a4ad9f;margin:0 0 40px;max-width:560px}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;list-style:none;margin:0;padding:0}
+.links a{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #ffffff1f;border-radius:12px;padding:20px 22px;transition:all .35s;background:#141a14}
+.links a:hover{border-color:#c8fa7580;background:#182018;transform:translateY(-4px)}
+.links .k{font-size:11px;letter-spacing:2px;color:#8f998a;display:block;margin-bottom:8px;transition:color .3s}
+.links .v{font-size:15px;color:#e8ede3}
+.links .go{color:#8f998a;transition:transform .35s,color .35s}
+.links a:hover .go{color:#c8fa75;transform:translate(4px,-4px)}
+.links a:hover .k{color:#c8fa75}
+.links .soon{border-style:dashed;opacity:.7}
+.links .soon:hover{opacity:1}
+
+/* ============ 页脚 ============ */
+footer{border-top:1px solid #ffffff20;padding:34px 0 44px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;color:#879080;font-size:12px;letter-spacing:1px}
+footer a:hover{color:#c8fa75}
+.foot-nav{display:flex;gap:22px;flex-wrap:wrap}
+footer .up{transition:transform .3s,color .3s}
+footer .up:hover{transform:translateY(-3px)}
+
+/* ============ 滚动入场动效 ============ */
+.reveal{opacity:0;transform:translateY(26px)}
+.loaded .reveal{transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
+.reveal.d4{transition-delay:.32s}.reveal.d5{transition-delay:.4s}
+.work-grid .card:nth-child(2),.tags li:nth-child(2n),.timeline li:nth-child(2n){transition-delay:.09s}
+.work-grid .card:nth-child(3),.tags li:nth-child(3n),.timeline li:nth-child(3n){transition-delay:.18s}
+.work-grid .card:nth-child(4){transition-delay:.27s}
+.work-grid .card:nth-child(5){transition-delay:.36s}
+.work-grid .card:nth-child(6){transition-delay:.45s}
+
+/* ============ 响应式 ============ */
+@media(min-width:1500px){.hero{min-height:760px}}
+@media(max-width:1080px){
+  .hero{grid-template-columns:1fr;gap:52px;min-height:0;padding:64px 0}
+  .poster{max-width:400px;justify-self:center;width:88%}
+  .work-grid{grid-template-columns:1fr}
+  .card.wide{grid-column:span 1}
+}
+@media(max-width:820px){
+  header{height:auto;padding:16px 0;flex-direction:column;align-items:flex-start;gap:14px;position:static;backdrop-filter:none;background:transparent}
+  nav{width:100%;gap:8px 18px;flex-wrap:wrap;font-size:13px}
+  .section-head,.about{grid-template-columns:1fr;gap:26px}
+  .stats{gap:24px}
+}
+@media(max-width:760px){
+  .shell{padding:0 7%}
+  .hero h1{font-size:clamp(38px,10vw,58px);letter-spacing:-2px}
+  .intro{font-size:16px}
+  .poster{padding:24px;transform:rotate(2deg)}
+  .type-art{font-size:104px;letter-spacing:-6px}
+  .poster-note{letter-spacing:3px}
+  .strip{gap:20px;font-size:11px;letter-spacing:1px}
+  .strip strong{font-size:12px}
+  .marquee-track{font-size:13px;letter-spacing:4px;gap:30px}
+  .about{padding:58px 0}
+  .about h2{font-size:26px}
+  .actions{gap:18px}
+  .domain{font-size:12px}
+  .section-head{margin-bottom:40px}
+  .section-head h2{font-size:26px}
+  .card{padding:26px;min-height:0}
+  .card h3{font-size:20px}
+  .stats{grid-template-columns:1fr 1fr;gap:20px;margin-top:34px}
+  .contact{padding:60px 0 70px}
+  .links{grid-template-columns:1fr}
+  footer{font-size:12px;justify-content:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  .reveal{opacity:1;transform:none}
+  .poster{transform:none}
+}
+/* 兜底：打印时 / 脚本未生效时，内容必须可见 */
+@media print{
+  .progress,.skip{display:none}
+  .reveal{opacity:1;transform:none}
+  body::before{display:none}
+  .marquee-track{animation:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到主要内容</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<div class="shell">
+<header>
+  <a class="brand" href="#top" aria-label="栾树首页"><span class="mark" aria-hidden="true">L</span> LUANSHU</a>
+  <nav aria-label="主导航">
+    <a href="#about">关于我</a>
+    <a href="#interests">兴趣</a>
+    <a href="#works">在做的事</a>
+    <a href="#timeline">时间线</a>
+    <a href="#contact">联系</a>
+    <a href="https://luanshu.de5.net">我的域名 ↗</a>
+  </nav>
+</header>
+
+<main id="main">
+  <span id="top"></span>
+
+  <!-- ========== 首页大图区 ========== -->
+  <section class="hero" aria-labelledby="title">
+    <div>
+      <p class="eyebrow reveal d1">A LITTLE SPACE ON THE INTERNET</p>
+      <h1 id="title" class="reveal d2">你好，我是<span>栾树</span>。<br>欢迎来坐坐。</h1>
+      <p class="intro reveal d3">在这里，留一点空间给自己。<br>保持好奇，慢慢生长。</p>
+      <div class="actions reveal d4">
+        <a class="primary" href="#works">看看我在做什么 <span class="arw" aria-hidden="true">↗</span></a>
+        <a class="ghost" href="#contact">打个招呼</a>
+        <span class="domain">luanshu.de5.net</span>
+      </div>
+      <dl class="stats reveal d5">
+        <li><dt data-count="12">12</dt><dd>BOOKS A YEAR</dd></li>
+        <li><dt data-count="3">3</dt><dd>THINGS IN PROGRESS</dd></li>
+        <li><dt data-count="1">1</dt><dd>PLACE OF MY OWN</dd></li>
+      </dl>
+    </div>
+    <div class="poster" id="poster" aria-label="LUAN SHU 字体海报：保持好奇，慢慢生长">
+      <div class="poster-top"><span>PERSONAL SPACE</span><span>№ 001</span></div>
+      <div class="poster-mid">
+        <div class="type-art" aria-hidden="true"><span>LUAN</span><span>SHU.</span></div>
+        <div class="poster-note">保持好奇 · 慢慢生长</div>
+      </div>
+      <div class="poster-bottom"><span>LUANSHU.DE5.NET</span><span>© <span id="year">2026</span></span></div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <strong>一个人，一片自己的天地。</strong>
+    <span>STAY CURIOUS. KEEP GROWING.</span>
+  </div>
+
+  <!-- ========== 跑马灯 ========== -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>保持好奇</span><span>·</span><span>慢慢生长</span><span>·</span><span>STAY CURIOUS</span><span>·</span><span>KEEP GROWING</span><span>·</span><span>LUANSHU.DE5.NET</span><span>·</span>
+      <span>保持好奇</span><span>·</span><span>慢慢生长</span><span>·</span><span>STAY CURIOUS</span><span>·</span><span>KEEP GROWING</span><span>·</span><span>LUANSHU.DE5.NET</span><span>·</span>
+    </div>
+  </div>
+
+  <!-- ========== 关于我 ========== -->
+  <section class="about" id="about" aria-labelledby="about-title">
+    <div class="section-label reveal">01 / ABOUT ME<br><br>关于我</div>
+    <div>
+      <h2 id="about-title" class="reveal d1">世界很大，<br>这里是属于我的<em>小小一角</em>。</h2>
+      <p class="reveal d2">这个网页是我的线上小屋。用它安放想法，也让每一次偶然的相遇，有一个落脚的地方。</p>
+      <p class="reveal d3">我喜欢把复杂的事情一点点理清楚，也喜欢在安静的时候写点东西、折腾点小工具。这里不追热点，只记录那些我真正在意的事。</p>
+      <p class="reveal d4">很高兴你路过这里。</p>
+    </div>
+  </section>
+
+  <!-- ========== 兴趣 ========== -->
+  <section class="interests" id="interests" aria-labelledby="interests-title">
+    <div class="section-head">
+      <div class="section-label reveal"><b>02 / INTERESTS</b>兴趣与日常</div>
+      <div>
+        <h2 id="interests-title" class="reveal d1">让我愿意<em>多花一点时间</em>的事。</h2>
+        <p class="reveal d2">下面这些标签，是我生活里反复出现的关键词。想到什么就补什么，慢慢会长满。</p>
+      </div>
+    </div>
+    <ul class="tags">
+      <li class="reveal"><b>01</b>写点东西</li>
+      <li class="reveal"><b>02</b>做小工具</li>
+      <li class="reveal"><b>03</b>摄影 / 记录</li>
+      <li class="reveal"><b>04</b>设计排版</li>
+      <li class="reveal"><b>05</b>阅读与笔记</li>
+      <li class="reveal"><b>06</b>散步与观察</li>
+      <li class="reveal"><b>07</b>音乐与播客</li>
+      <li class="reveal"><b>08</b>植物与窗口的光</li>
+      <li class="reveal"><b>09</b>手冲咖啡</li>
+      <li class="reveal"><b>10</b>一个人旅行</li>
+    </ul>
+  </section>
+
+  <!-- ========== 在做的事 ========== -->
+  <section class="works" id="works" aria-labelledby="works-title">
+    <div class="section-head">
+      <div class="section-label reveal"><b>03 / WORKS</b>在做的事</div>
+      <div>
+        <h2 id="works-title" class="reveal d1">一些<em>正在生长</em>的作品。</h2>
+        <p class="reveal d2">它们有的还很粗糙，但都是真实做出来的东西。点开看看，也欢迎给我建议。</p>
+      </div>
+    </div>
+
+    <div class="work-grid">
+      <article class="card reveal">
+        <span class="no">001 / WEBSITE</span>
+        <h3>这个个人主页</h3>
+        <p>你正在看的页面。用最朴素的方式搭建，追求干净的排版和一点不吵闹的个性。</p>
+        <ul class="tagsline"><li>HTML</li><li>CSS</li><li>排版</li></ul>
+        <span class="more">持续更新中 →</span>
+      </article>
+
+      <article class="card reveal">
+        <span class="no">002 / NOTES</span>
+        <h3>想法笔记本</h3>
+        <p>把想法写下来，是我对抗遗忘的方式。零散的观察、读到的好句子、突然冒出来的点子，都先记下来再说。</p>
+        <ul class="tagsline"><li>写作</li><li>笔记</li></ul>
+        <span class="more">陆续整理中 →</span>
+      </article>
+
+      <article class="card reveal">
+        <span class="no">003 / PHOTO</span>
+        <h3>随手拍的角落</h3>
+        <p>城市边缘、窗台、路边的一棵树。没有主题，只是那天光线刚好，就按了快门。</p>
+        <ul class="tagsline"><li>摄影</li><li>记录</li></ul>
+        <span class="more">整理成册中 →</span>
+      </article>
+
+      <article class="card wide reveal">
+        <span class="no">004 / NEXT</span>
+        <h3>下一件想做的事</h3>
+        <p>这里留给还没开始的项目。清单很长，先挑一件把它做完 —— 这也是"慢慢生长"的意思。</p>
+        <ul class="tagsline"><li>计划中</li><li>待解锁</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- ========== 时间线 ========== -->
+  <section class="timeline-sec" id="timeline" aria-labelledby="timeline-title">
+    <div class="section-head">
+      <div class="section-label reveal"><b>04 / TIMELINE</b>这几年的脚步声</div>
+      <div>
+        <h2 id="timeline-title" class="reveal d1">一步一步，<em>慢慢生长</em>。</h2>
+        <p class="reveal d2">不是什么了不起的大事，只是些值得记下的节点。</p>
+      </div>
+    </div>
+    <ol class="timeline">
+      <li>
+        <time datetime="2026">2026</time>
+        <h3>有了这个小屋</h3>
+        <p>把域名 luanshu.de5.net 用起来，写下第一版页面。决定以后常来更新。</p>
+      </li>
+      <li>
+        <time datetime="2025">2025</time>
+        <h3>开始习惯记录</h3>
+        <p>把"想到就写下来"变成日常，攒下了一批零散但真实的笔记。</p>
+      </li>
+      <li>
+        <time datetime="2024">2024</time>
+        <h3>重新捡起好奇心</h3>
+        <p>不再只盯着结果，开始享受过程本身：学一点新东西，做一点小东西。</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ========== 联系 ========== -->
+  <section class="contact" id="contact" aria-labelledby="contact-title">
+    <h2 id="contact-title" class="reveal">想聊两句？<br>随时<em>写信给我</em>。</h2>
+    <p class="lead reveal d1">无论是想法交换、合作，还是单纯打个招呼，我都很乐意收到你的消息。邮箱我会尽快回。</p>
+    <ul class="links">
+      <li class="reveal d1">
+        <a href="mailto:3034346570@qq.com">
+          <span><span class="k">EMAIL</span><span class="v">3034346570@qq.com</span></span>
+          <span class="go" aria-hidden="true">↗</span>
+        </a>
+      </li>
+      <li class="reveal d2">
+        <a href="https://github.com/" target="_blank" rel="noopener noreferrer">
+          <span><span class="k">GITHUB</span><span class="v">代码与半成品</span></span>
+          <span class="go" aria-hidden="true">↗</span>
+        </a>
+      </li>
+      <li class="reveal d3">
+        <a href="https://luanshu.de5.net" target="_blank" rel="noopener noreferrer">
+          <span><span class="k">WEBSITE</span><span class="v">luanshu.de5.net</span></span>
+          <span class="go" aria-hidden="true">↗</span>
+        </a>
+      </li>
+      <li class="reveal d4">
+        <a class="soon" href="#contact" aria-disabled="true">
+          <span><span class="k">SOCIAL · 待补充</span><span class="v">公众号 / 小红书 / B站</span></span>
+          <span class="go" aria-hidden="true">+</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <span>© <span class="foot-year">2026</span> 栾树 · LUANSHU</span>
+  <nav class="foot-nav" aria-label="页脚导航">
+    <a href="#about">关于我</a>
+    <a href="#works">在做的事</a>
+    <a href="#contact">联系</a>
+  </nav>
+  <a class="up" href="#top">回到顶部 ↑</a>
+</footer>
+</div>
+
+<noscript><style>.reveal{opacity:1;transform:none}.progress{display:none}</style></noscript>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* 页码 */
+  var y = new Date().getFullYear();
+  document.getElementById('year').textContent = y;
+  Array.prototype.forEach.call(document.querySelectorAll('.foot-year'), function (el) { el.textContent = y; });
+
+  if (reduce) { root.classList.add('loaded'); return; }
+
+  /* 入场：首屏直接淡入，其余滚动到视口再淡入 */
+  requestAnimationFrame(function () {
+    setTimeout(function () { root.classList.add('loaded'); }, 60);
+  });
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    Array.prototype.forEach.call(document.querySelectorAll('.reveal, .timeline li'), function (el) { io.observe(el); });
+
+    /* 导航高亮 */
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav a[href^="#"]'));
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (a) { a.classList.toggle('is-active', a.getAttribute('href') === '#' + e.target.id); });
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    Array.prototype.forEach.call(document.querySelectorAll('section[id]'), function (s) { spy.observe(s); });
+
+    /* 兜底：任何异常情况下，3 秒后也保证内容可见 */
+    setTimeout(function () {
+      root.classList.add('loaded');
+      Array.prototype.forEach.call(document.querySelectorAll('.reveal, .timeline li'), function (el) { el.classList.add('in'); });
+    }, 3000);
+  } else {
+    Array.prototype.forEach.call(document.querySelectorAll('.reveal, .timeline li'), function (el) { el.classList.add('in'); });
+  }
+
+  /* 数字滚动：静态值写在 HTML 里；只有动画帧真正开始推进时才从 0 数起 */
+  var nums = document.querySelectorAll('[data-count]');
+  function runCount(el) {
+    var target = parseInt(el.getAttribute('data-count'), 10) || 0, t0 = null, started = false, done = false;
+    function finish() { if (!done) { done = true; el.textContent = target; } }
+    function step(ts) {
+      if (!started) { started = true; el.textContent = '0'; }
+      if (!t0) t0 = ts;
+      var p = Math.min((ts - t0) / 1100, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(step); else done = true;
+    }
+    requestAnimationFrame(step);
+    setTimeout(finish, 1800);
+  }
+  if ('IntersectionObserver' in window) {
+    var cio = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { runCount(e.target); cio.unobserve(e.target); } });
+    }, { threshold: 0.5 });
+    Array.prototype.forEach.call(nums, function (n) { cio.observe(n); });
+  } else {
+    Array.prototype.forEach.call(nums, function (n) { n.textContent = n.getAttribute('data-count'); });
+  }
+
+  /* 阅读进度条 */
+  var bar = document.getElementById('progress'), ticking = false;
+  function draw() {
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    var p = h > 0 ? Math.min(window.scrollY / h, 1) : 0;
+    bar.style.transform = 'scaleX(' + p + ')';
+    ticking = false;
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(draw); }
+  }, { passive: true });
+  window.addEventListener('resize', draw);
+  draw();
+
+  /* 海报随鼠标轻微倾斜 */
+  var poster = document.getElementById('poster');
+  var fine = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  if (poster && fine) {
+    var host = document.querySelector('.hero');
+    host.addEventListener('mousemove', function (ev) {
+      var r = host.getBoundingClientRect();
+      var dx = (ev.clientX - r.left) / r.width - 0.5;
+      var dy = (ev.clientY - r.top) / r.height - 0.5;
+      poster.style.transform = 'rotate(' + (3 + dx * 5) + 'deg) translate(' + (dx * 14) + 'px,' + (dy * 14) + 'px)';
+    });
+    host.addEventListener('mouseleave', function () { poster.style.transform = ''; });
+  }
+})();
+</script>
+</body>
+</html>
