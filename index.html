@@ -275,9 +275,10 @@ body.lb-open{overflow:hidden}
 .person-alias .alias-k{color:#8f998a;margin-right:10px;letter-spacing:2px}
 .person+.person{margin-top:20px}
 
-/* ============ 神秘生物：一条信息都没有的档案 ============ */
-/* 没有照片、没有标签、没有小记，只留下一句话。
-   照片位仍然保持 3:4 框体，用「资料缺失」占位，卡片骨架和别的人物完全一致。
+/* ============ 神秘生物：几乎什么都没留下的档案 ============ */
+/* 除了唯一一句话，只剩一张横向的影像。
+   影像用 contain 完整放进 3:4 相框 —— 不裁掉袋鼠的胳膊和那行红字，
+   上下多出来的暗色正好当作档案的装裱底板。
    这里刻意不加任何常驻动画：页面已经跑着跑马灯，不再给长时渲染加负担。 */
 .person-photo.is-unknown{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
@@ -285,7 +286,7 @@ body.lb-open{overflow:hidden}
   background:
     repeating-linear-gradient(0deg,#ffffff0a 0 1px,#0000 1px 5px),
     radial-gradient(120% 85% at 50% 32%,#1c241c,#0d110d 72%)}
-.unknown-mark{font-size:clamp(74px,8.4vw,108px);font-weight:600;line-height:1;color:#c8fa75;opacity:.9;text-shadow:0 0 40px #c8fa7538}
+.person-photo.is-unknown img{width:100%;height:auto;object-fit:contain;border:0;border-radius:0;filter:none}
 .unknown-cap{font-size:10px;letter-spacing:4px;color:#7c8678;text-align:center;line-height:1.9}
 .unknown-cap b{display:block;font-weight:400;letter-spacing:2.6px;color:#5c6659}
 /* 标签位：只留下被涂掉的色块，hover 不再点亮 */
@@ -886,9 +887,10 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
     </article>
 
     <article class="person reveal" id="person-mystery">
-      <div class="person-photo is-unknown" role="img" aria-label="影像资料缺失：这只生物没有留下任何照片">
-        <span class="unknown-mark" aria-hidden="true">?</span>
-        <span class="unknown-cap" aria-hidden="true">影像资料缺失<b>NO IMAGE ON FILE</b></span>
+      <div class="person-photo is-unknown">
+        <img id="mystery-photo" src="photos/mystery-creature.jpg" width="601" height="551" loading="lazy" decoding="async"
+             alt="传说中的神秘生物：一只肌肉发达的黄色袋鼠玩偶，双手握拳展示肱二头肌，图下一行红底白字写着「我的胆子就是肥嘟嘟的！」">
+        <span class="unknown-cap" aria-hidden="true">唯一留存的影像<b>ONLY IMAGE ON FILE</b></span>
       </div>
       <div class="person-info">
         <header>
