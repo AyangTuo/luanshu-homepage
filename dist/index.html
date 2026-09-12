@@ -267,119 +267,74 @@ body.lb-open{overflow:hidden}
 .person-alias .alias-k{color:#8f998a;margin-right:10px;letter-spacing:2px}
 .person+.person{margin-top:20px}
 
-/* ============ 小哈的蜕变相册 ============ */
-.convert{grid-column:1 / -1;margin-top:30px;padding-top:26px;border-top:1px solid #ffffff1f;min-width:0}
-.convert-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px 20px;margin-bottom:22px}
-.convert-head h4{margin:0;font-size:12px;letter-spacing:3px;color:#c8fa75;font-weight:600}
-.convert-count{font-size:12px;letter-spacing:2px;color:#8f998a;font-variant-numeric:tabular-nums}
-.convert-stage{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:clamp(24px,3vw,44px);align-items:start}
-.convert-media{position:relative;overflow:hidden;border-radius:12px;border:1px solid #ffffff1f;aspect-ratio:3/4;background:#0e130e}
-.convert-media img{display:block;width:100%;height:100%;object-fit:cover}
-/* 图片切换：先遮起来，再从左侧揭开 */
-.convert-media::after{content:"";position:absolute;inset:0;background:#0e130e;transform:scaleX(0);transform-origin:right center;pointer-events:none;z-index:2}
-.convert.is-switching .convert-media::after{transition:none;transform:scaleX(1)}
-.convert.is-switching .convert-media img{visibility:hidden}
-.convert.is-revealing .convert-media::after{transition:transform 680ms cubic-bezier(.22,.75,.2,1);transform:scaleX(0)}
-.convert.is-revealing .convert-media img{visibility:visible;animation:photoIn 820ms cubic-bezier(.22,.75,.2,1) both}
-@keyframes photoIn{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:none}}
-.convert-content{min-width:0;display:grid;gap:14px;align-content:start}
-.convert-content>*{opacity:1}
-.convert.is-switching .convert-content>*{opacity:0;transform:translateX(14px);transition:none}
-.convert.is-revealing .convert-content>*{animation:layerIn 620ms cubic-bezier(.22,.75,.2,1) both}
-@keyframes layerIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
-.convert.is-revealing .convert-content>*:nth-child(1){animation-delay:170ms}
-.convert.is-revealing .convert-content>*:nth-child(2){animation-delay:250ms}
-.convert.is-revealing .convert-content>*:nth-child(3){animation-delay:320ms}
-.convert.is-revealing .convert-content>*:nth-child(4){animation-delay:400ms}
-.convert.is-revealing .convert-content>*:nth-child(5){animation-delay:500ms}
-.conv-no{font-size:12px;letter-spacing:3px;color:#c8fa75;font-variant-numeric:tabular-nums}
-.conv-title{margin:0;font-size:clamp(19px,2vw,25px);font-weight:600;letter-spacing:-.4px;color:#e8ede3;line-height:1.4}
-.conv-state{margin:0;font-size:13px;letter-spacing:1.5px;color:#a4ad9f}
-.conv-state .k{color:#8f998a;margin-right:10px}
-.conv-desc{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa;max-width:620px}
-.conv-prog{display:flex;align-items:center;gap:14px;margin-top:4px}
-.conv-prog .k{font-size:12px;letter-spacing:2px;color:#8f998a;white-space:nowrap}
-.conv-bar{flex:1;height:3px;border-radius:3px;background:#ffffff1f;overflow:hidden;max-width:320px}
-.conv-bar i{display:block;height:100%;width:10%;background:linear-gradient(90deg,#c8fa75,#8ff0c4);border-radius:3px;transition:width .6s cubic-bezier(.22,.75,.2,1)}
-.conv-pct{font-size:12px;color:#c8fa75;font-variant-numeric:tabular-nums;white-space:nowrap}
-/* 最终判定：稍后才浮现 */
-.conv-final{margin:0;font-size:14px;letter-spacing:1px;color:#dcffa5;border:1px dashed #c8fa7559;border-radius:10px;padding:12px 16px;justify-self:start;background:#c8fa7510;opacity:0;transform:translateY(6px);transition:opacity .5s,transform .5s;visibility:hidden}
-.conv-final.is-shown{opacity:1;transform:none;visibility:visible}
-/* 控制条 */
-.convert-ctrl{display:flex;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap}
-.conv-btn{font:inherit;font-size:13px;color:#cdd5c8;background:#ffffff0d;border:1px solid #ffffff2b;border-radius:20px;padding:9px 17px;cursor:pointer;transition:color .25s,border-color .25s,background .25s,transform .25s}
-.conv-btn:hover:not(:disabled){color:#dcffa5;border-color:#c8fa7599;background:#c8fa751a;transform:translateY(-1px)}
-.conv-btn:focus-visible{outline:2px solid #c8fa75;outline-offset:3px}
-.conv-btn:disabled{opacity:.42;cursor:not-allowed}
-.conv-play{color:#c8fa75;border-color:#c8fa7566}
-.conv-dots{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
-.conv-dot{width:22px;height:22px;padding:0;border:1px solid #ffffff26;border-radius:50%;background:none;color:#8f998a;font:inherit;font-size:10px;line-height:1;cursor:pointer;transition:all .25s;font-variant-numeric:tabular-nums}
-.conv-dot:hover{border-color:#c8fa7599;color:#c8fa75}
-.conv-dot[aria-current="true"]{border-color:#c8fa75;color:#101410;background:#c8fa75}
-.conv-dot:focus-visible{outline:2px solid #c8fa75;outline-offset:2px}
-
-/* 特殊标签：可点击，但仍是标签的形态 */
-.tag-special{margin:0;padding:0;border:0}
-.tag-special button{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13px;color:#cdd5c8;background:#c8fa7510;border:1px dashed #c8fa7559;border-radius:20px;padding:7px 15px;cursor:pointer;transition:color .3s,background .3s,border-color .3s,box-shadow .3s,transform .3s}
-.tag-special .hash{color:#c8fa75;font-weight:600}
-.tag-special .hint{font-size:10.5px;letter-spacing:1px;color:#8f998a;border-left:1px solid #ffffff2b;padding-left:8px;transition:color .3s}
-.tag-special button:hover{color:#dcffa5;border-style:solid;border-color:#c8fa7599;background:#c8fa751c;transform:translateY(-2px)}
-.tag-special button:focus-visible{outline:2px solid #c8fa75;outline-offset:3px}
-.tag-special button[aria-pressed="true"]{color:#dcffa5;border-style:solid;border-color:#c8fa75;background:#c8fa7524;box-shadow:0 0 0 1px #c8fa7538,0 0 20px -4px #c8fa7599}
-.tag-special button[aria-pressed="true"] .hint{color:#c8fa75}
-
-/* 图片与文案切换：尺寸固定，只做淡入淡出，卡片不跳动 */
-.person-photo img{transition:opacity .28s ease}
-.person-photo.is-swapping img{opacity:.1}
-.notes-body{display:grid}
-.notes-set{grid-area:1/1;opacity:1;transition:opacity .3s ease}
-.notes-set.is-off{opacity:0;pointer-events:none}
-.notes-set p{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa}
-.notes-set p+p{margin-top:14px}
-
-/* ============ 私人档案入口 ============ */
-html.locked,html.locked body{overflow:hidden}
-html.locked .shell,html.locked .skip,html.locked .progress,html.locked .lightbox{display:none}
-.gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:6vw;background:#101410;opacity:1;transition:opacity .55s ease,visibility .55s;overflow-y:auto;overscroll-behavior:contain;height:100vh;height:100dvh}
-.gate::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(720px 520px at 50% 12%,#c8fa7517,transparent 62%),radial-gradient(560px 460px at 50% 100%,#3d6f5a1f,transparent 62%)}
-/* 已通过验证的回头访客：首次绘制前就把入口藏掉，不会闪 */
-html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
-.gate.gate-done{opacity:0;visibility:hidden}
-.gate-card{position:relative;width:100%;max-width:430px;text-align:center}
-.gate-eyebrow{margin:0 0 26px;font-size:11px;letter-spacing:5px;color:#c8fa7580}
-.gate-title{margin:0;font-size:clamp(30px,4.6vw,44px);font-weight:600;letter-spacing:2px;color:#f4f5ef}
-.gate-title::after{content:"";display:block;width:48px;height:2px;background:#c8fa75;margin:20px auto 0}
-.gate-sub{margin:24px 0 34px;font-size:14.5px;line-height:1.95;color:#a4ad9f}
-.gate-form{margin:0}
-.gate-field{position:relative;display:flex;align-items:center;min-width:0}
-.gate-field input{width:100%;min-width:0;flex:1 1 auto;font:inherit;font-size:15px;letter-spacing:2px;color:#f4f5ef;background:#161c16;border:1px solid #ffffff2b;border-radius:30px;padding:15px 74px 15px 22px;transition:border-color .3s,background .3s,box-shadow .3s;text-align:center}
-.gate-field input::placeholder{color:#7d867a;letter-spacing:2px}
-.gate-field input:focus{outline:none;border-color:#c8fa75;background:#1a211a;box-shadow:0 0 0 3px #c8fa751f}
-.gate-eye{position:absolute;right:8px;font:inherit;font-size:11.5px;letter-spacing:1px;color:#8f998a;background:#ffffff0d;border:1px solid #ffffff1f;border-radius:20px;padding:7px 13px;cursor:pointer;transition:all .25s}
-.gate-eye:hover{color:#c8fa75;border-color:#c8fa7566;background:#c8fa7514}
-.gate-eye:focus-visible{outline:2px solid #c8fa75;outline-offset:2px}
-.gate-msg{margin:14px 0 0;min-height:20px;font-size:13.5px;letter-spacing:.5px}
-.gate-msg.is-err{color:#e08a80}
-.gate-msg.is-ok{color:#c8fa75}
-.gate-submit{margin-top:20px;width:100%;font:inherit;font-size:15px;letter-spacing:4px;color:#172012;background:#c8fa75;border:0;border-radius:30px;padding:16px 20px;cursor:pointer;transition:background .3s,transform .3s,box-shadow .3s}
-.gate-submit:hover:not(:disabled){background:#dcffa5;transform:translateY(-2px);box-shadow:0 14px 30px -12px #c8fa7599}
-.gate-submit:focus-visible{outline:2px solid #c8fa75;outline-offset:4px}
-.gate-submit:disabled{opacity:.6;cursor:default}
-.gate-foot{margin:44px 0 0;font-size:10px;letter-spacing:3px;color:#5d665a}
-@keyframes gateShake{0%,100%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(6px)}54%{transform:translateX(-4px)}72%{transform:translateX(3px)}88%{transform:translateX(-1px)}}
-.gate-field.is-shake{animation:gateShake .44s cubic-bezier(.36,.07,.19,.97)}
-.nav-exit{color:#7d867a}
-.nav-exit:hover{color:#e08a80}
+/* ============ 曹学艺：隐藏形态（原地切换，与陈明远同一套机制）============ */
+/* 照片区：正常照片与 10 阶段播放器叠放在同一位置，尺寸不变 */
+.person-photo{position:relative}
+.cao-stage{position:absolute;inset:0;display:none;overflow:hidden;border-radius:12px}
+.cao-stage img{display:block;width:100%;height:100%;object-fit:cover;border-radius:12px;border:1px solid #ffffff1f}
+/* 从左向右揭开的遮罩 */
+.cao-reveal{position:absolute;inset:0;background:#121712;transform-origin:right center;transform:scaleX(1);z-index:2;pointer-events:none}
+#person-cao.hidden-mode .cao-stage{display:block}
+#person-cao.hidden-mode .person-photo>img{visibility:hidden}
+#person-cao.hidden-mode .cao-reveal{animation:caoReveal 1000ms cubic-bezier(.22,.75,.2,1) both}
+@keyframes caoReveal{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+/* 右侧：正常小记与阶段档案叠放，切换时高度取两者较大值，卡片不跳 */
+.dup{display:grid}
+.dup-set{grid-area:1/1;opacity:1;transition:opacity .28s ease}
+.dup-set.is-off{opacity:0;pointer-events:none;visibility:hidden}
+/* 阶段档案 */
+.cao-file{min-width:0}
+.cf-no{margin:0 0 10px;font-size:12px;letter-spacing:3px;color:#c8fa75;font-variant-numeric:tabular-nums}
+.cf-no .cf-no-k{margin-right:8px}
+.cf-title{margin:0 0 12px;font-size:clamp(19px,2vw,25px);font-weight:600;letter-spacing:-.4px;color:#e8ede3;line-height:1.4}
+.cf-state{margin:0 0 16px;font-size:13px;letter-spacing:1.5px;color:#a4ad9f}
+.cf-state .k{color:#8f998a;margin-right:10px}
+.cf-desc{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa;max-width:620px}
+.cf-desc p{margin:0}
+.cf-desc p+p{margin-top:14px}
+.cf-prog{display:flex;align-items:center;gap:14px;margin-top:22px}
+.cf-prog .k{font-size:12px;letter-spacing:2px;color:#8f998a;white-space:nowrap}
+.cf-bar{flex:1;height:3px;border-radius:3px;background:#ffffff1f;overflow:hidden;max-width:280px}
+.cf-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c8fa75,#8ff0c4);border-radius:3px}
+.cf-pct{font-size:12px;color:#c8fa75;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cf-verdict{margin:20px 0 0;font-size:13.5px;letter-spacing:1px;color:#dcffa5;border:1px dashed #c8fa7559;border-radius:10px;padding:11px 15px;background:#c8fa7510;visibility:hidden;opacity:0}
+.cf-verdict.is-shown{visibility:visible;opacity:1;transition:opacity .5s}
+/* 文案分层浮现：编号 → 标题 → 状态 → 正文 → 进度 */
+.cao-file>*{opacity:1}
+#person-cao.hidden-mode .cao-file.is-reading>*{animation:cfIn 620ms cubic-bezier(.22,.75,.2,1) both}
+@keyframes cfIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(1){animation-delay:200ms}
+#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(2){animation-delay:290ms}
+#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(3){animation-delay:380ms}
+#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(4){animation-delay:470ms}
+#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(5){animation-delay:580ms}
+#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(6){animation-delay:700ms}
+/* 低调的控制条 */
+.cao-ctrl{display:flex;align-items:center;gap:9px;margin-top:20px;flex-wrap:wrap}
+.cf-btn{font:inherit;font-size:12px;line-height:1;color:#8f998a;background:#ffffff0a;border:1px solid #ffffff24;border-radius:20px;min-width:32px;height:30px;padding:0 11px;cursor:pointer;transition:color .25s,border-color .25s,background .25s}
+.cf-btn:hover:not(:disabled){color:#dcffa5;border-color:#c8fa7599;background:#c8fa751a}
+.cf-btn:focus-visible{outline:2px solid #c8fa75;outline-offset:2px}
+.cf-btn:disabled{opacity:.4;cursor:not-allowed}
+.cf-count{font-size:11.5px;letter-spacing:2px;color:#7d867a;font-variant-numeric:tabular-nums}
+.cf-dots{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
+.cf-dot{width:8px;height:8px;padding:0;border:1px solid #ffffff2e;border-radius:50%;background:none;cursor:pointer;transition:all .25s}
+.cf-dot:hover{border-color:#c8fa75;background:#c8fa7540}
+.cf-dot[aria-current="true"]{background:#c8fa75;border-color:#c8fa75;box-shadow:0 0 8px -1px #c8fa75cc}
+.cf-dot:focus-visible{outline:2px solid #c8fa75;outline-offset:2px}
+/* 名字不变，只在第 10 阶段慢慢浮现最终形态 */
+.cao-final-form{margin:0;font-size:12px;letter-spacing:2px;color:#c8fa75;max-height:0;opacity:0;overflow:hidden;transition:opacity .5s,margin-top .5s,max-height .5s}
+.cao-final-form.is-shown{margin-top:8px;max-height:24px;opacity:1}
 @media(max-width:760px){
-  .gate{padding:8vw 7vw}
-  .gate-card{max-width:100%}
-  .gate-sub{font-size:14px;margin:20px 0 28px}
-  .gate-foot{margin-top:34px;letter-spacing:2px}
-  .gate-title::after{margin-top:16px}
-  .gate-eye{padding:6px 10px;font-size:11px;right:6px}
-  .gate-field input{padding:14px 62px 14px 18px;letter-spacing:1px}
+  .cf-title{font-size:20px}
+  .cf-desc{font-size:15px;line-height:1.95}
+  .cf-prog{flex-wrap:wrap;gap:10px}
+  .cf-bar{max-width:none;min-width:120px}
+  .cao-ctrl{gap:8px;margin-top:16px}
+  .cf-dots{margin-left:0;width:100%}
+  .cf-btn{height:28px;min-width:30px;padding:0 9px}
 }
 
+/* ============ 响应式 ============ */
 /* ============ 响应式 ============ */
 @media(min-width:1500px){.hero{min-height:760px}}
 @media(max-width:1080px){
@@ -443,18 +398,6 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
   .person-notes{margin-top:22px}
   .person-notes p{font-size:15px;line-height:1.95}
   .person-quote{margin-top:22px;padding-top:18px}
-  .convert{margin-top:24px;padding-top:20px}
-  .convert-stage{grid-template-columns:1fr;gap:20px}
-  .convert-media{max-width:320px}
-  .convert-head{margin-bottom:16px}
-  .conv-title{font-size:20px}
-  .conv-desc{font-size:15px;line-height:1.95}
-  .conv-prog{flex-wrap:wrap;gap:10px}
-  .conv-bar{max-width:none;min-width:120px}
-  .convert-ctrl{gap:8px;margin-top:18px}
-  .conv-btn{padding:8px 14px;font-size:12.5px}
-  .conv-dots{margin-left:0;width:100%;gap:5px}
-  .conv-dot{width:20px;height:20px;font-size:9.5px}
   .lightbox{padding:3vh 5vw}
   .lightbox img{max-height:70vh}
   .lightbox-close{top:12px;right:12px;width:40px;height:40px}
@@ -723,15 +666,21 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
       </div>
     </article>
 
-    <article class="person reveal">
+    <article class="person reveal" id="person-cao">
       <div class="person-photo">
-        <img src="photos/cao-xueyi.jpg" width="1000" height="1333" loading="lazy" decoding="async"
+        <img id="cao-photo" src="photos/cao-xueyi.jpg" width="1000" height="1333" loading="lazy" decoding="async"
              alt="曹学艺在教室里对着镜头比手势自拍，笑得很开心">
+        <!-- 隐藏形态：10 阶段播放器，原地替换上面的照片 -->
+        <div class="cao-stage" id="cao-stage" aria-hidden="true">
+          <img id="cao-stage-img" src="" alt="">
+          <span class="cao-reveal" aria-hidden="true"></span>
+        </div>
       </div>
       <div class="person-info">
         <header>
           <h3>曹学艺</h3>
           <p class="person-alias"><span class="alias-k">外号</span>小哈</p>
+          <p class="cao-final-form" aria-hidden="true">最终形态：沪上贵气型婶子</p>
         </header>
         <dl class="person-tags">
           <dt class="sr">人物标签</dt>
@@ -740,58 +689,60 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
           <dd>恋爱经验丰富</dd>
           <dd>依旧单纯</dd>
           <dd>小屋常驻活人感</dd>
+          <dd class="tag-special">
+            <button type="button" id="cao-toggle" aria-pressed="false">
+              <span class="hash" aria-hidden="true">#</span>一个男人的蜕变
+              <span class="hint" aria-hidden="true">点击</span>
+            </button>
+          </dd>
         </dl>
-        <div class="person-notes">
-          <h4>人物小记</h4>
-          <div class="notes-body">
-            <p>小哈是这个小屋里最不能缺席的人之一。</p>
-            <p>他在的时候，屋子里总是有声音的。聊天、开玩笑、接话、折腾点什么，哪怕什么正事都没干，也会让人觉得这里确实住着一群活生生的人。</p>
-            <p>他谈过十段恋爱。</p>
-            <p>按理说，经历到这个数量，人多少该变得世故一点了。</p>
-            <p>但小哈没有。</p>
-            <p>他依旧保留着一种很难得的单纯，很多时候你甚至会怀疑，这十段恋爱到底有没有真正改变过他。</p>
-            <p>这个家不能没有小哈。</p>
-            <p>因为他一回家，屋子就会突然安静很多。</p>
-            <p>不是那种普通的安静，而是会明显少一点"有人在这里生活"的感觉。</p>
-            <p>所以某种意义上，小哈不只是一个室友。</p>
-            <p>他是这个小屋的活人味。</p>
-          </div>
-        </div>
-        <blockquote class="person-quote">
-          <p>"十段恋爱过去了，人还是那个小哈。"</p>
-          <cite>他留下的一句话</cite>
-        </blockquote>
-      </div>
 
-      <!-- 一个男人的蜕变：10 张照片，每张独立文案 -->
-      <div class="convert" id="xiao-ha-convert" tabindex="0" role="group" aria-label="一个男人的蜕变，共 10 个阶段">
-        <div class="convert-head">
-          <h4># 一个男人的蜕变</h4>
-          <span class="convert-count"><span class="cur">01</span> / <span class="total">10</span></span>
-        </div>
-        <div class="convert-stage">
-          <div class="convert-media">
-            <img src="photos/sweet-01.jpg" width="1000" height="1333" loading="lazy" decoding="async"
-                 alt="阶段 1：开始化妆">
-          </div>
-          <div class="convert-content" aria-live="polite">
-            <p class="conv-no">阶段 <span class="cur">01</span></p>
-            <h5 class="conv-title">开始化妆</h5>
-            <p class="conv-state"><span class="k">阶段状态</span>尚未察觉危险</p>
-            <p class="conv-desc">一切都从"随便化一下"开始。此时的小哈甚至还有一点配合。他大概以为，这只是今天众多玩笑中的一个。</p>
-            <div class="conv-prog">
-              <span class="k">蜕变进度</span>
-              <span class="conv-bar" role="img" aria-label="蜕变进度 10%"><i style="width:10%"></i></span>
-              <span class="conv-pct">10%</span>
+        <div class="dup" id="cao-notes">
+          <div class="dup-set is-on" data-set="normal">
+            <div class="person-notes">
+              <h4>人物小记</h4>
+              <div class="notes-body">
+                <p>小哈是这个小屋里最不能缺席的人之一。</p>
+                <p>他在的时候，屋子里总是有声音的。聊天、开玩笑、接话、折腾点什么，哪怕什么正事都没干，也会让人觉得这里确实住着一群活生生的人。</p>
+                <p>他谈过十段恋爱。</p>
+                <p>按理说，经历到这个数量，人多少该变得世故一点了。</p>
+                <p>但小哈没有。</p>
+                <p>他依旧保留着一种很难得的单纯，很多时候你甚至会怀疑，这十段恋爱到底有没有真正改变过他。</p>
+                <p>这个家不能没有小哈。</p>
+                <p>因为他一回家，屋子就会突然安静很多。</p>
+                <p>不是那种普通的安静，而是会明显少一点"有人在这里生活"的感觉。</p>
+                <p>所以某种意义上，小哈不只是一个室友。</p>
+                <p>他是这个小屋的活人味。</p>
+              </div>
             </div>
-            <p class="conv-final"></p>
+            <blockquote class="person-quote">
+              <p>"十段恋爱过去了，人还是那个小哈。"</p>
+              <cite>他留下的一句话</cite>
+            </blockquote>
           </div>
-        </div>
-        <div class="convert-ctrl">
-          <button class="conv-btn conv-prev" type="button">← 上一张</button>
-          <button class="conv-btn conv-next" type="button">下一张 →</button>
-          <button class="conv-btn conv-play" type="button" aria-pressed="false">▶ 自动播放</button>
-          <div class="conv-dots" role="tablist" aria-label="跳到指定阶段"></div>
+
+          <!-- 隐藏形态：当前阶段档案 -->
+          <div class="dup-set" data-set="hidden">
+            <div class="cao-file" id="cao-file" aria-live="polite">
+              <p class="cf-no"><span class="cf-no-k">阶段</span> <span class="cf-cur">01</span></p>
+              <h5 class="cf-title"></h5>
+              <p class="cf-state"><span class="k">阶段状态</span> <span class="cf-state-v"></span></p>
+              <div class="cf-desc"></div>
+              <div class="cf-prog">
+                <span class="k">蜕变进度</span>
+                <span class="cf-bar" role="img" aria-label="蜕变进度"><i></i></span>
+                <span class="cf-pct">0%</span>
+              </div>
+              <p class="cf-verdict"></p>
+            </div>
+            <div class="cao-ctrl">
+              <button class="cf-btn cf-prev" type="button" aria-label="上一阶段">←</button>
+              <button class="cf-btn cf-play" type="button" aria-label="暂停播放">❙❙</button>
+              <button class="cf-btn cf-next" type="button" aria-label="下一阶段">→</button>
+              <span class="cf-count"><span class="cf-cur">01</span> / 10</span>
+              <span class="cf-dots" role="tablist" aria-label="跳到指定阶段"></span>
+            </div>
+          </div>
         </div>
       </div>
     </article>
@@ -1126,175 +1077,203 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
     renderSweet();
   }
 
-  /* 一个男人的蜕变：10 张照片 · 每张独立文案 · 切换时图片揭开 + 文案分层浮现 */
-  var conv = document.getElementById('xiao-ha-convert');
-  if (conv) {
-    var STAGES = [
-      { img: 'photos/sweet-01.jpg', alt: '阶段 1：开始化妆',
-        title: '开始化妆', state: '尚未察觉危险',
-        desc: '一切都从"随便化一下"开始。此时的小哈甚至还有一点配合。他大概以为，这只是今天众多玩笑中的一个。' },
-      { img: 'photos/sweet-02.jpg', alt: '阶段 2：抗拒穿女装',
-        title: '抗拒穿女装', state: '明确拒绝',
-        desc: '真正的衣服出现以后，他终于意识到事情不太对劲。抗拒很真实，态度也很坚决。这是他第一次认真考虑：今天是不是不该回这个家。' },
-      { img: 'photos/sweet-03.jpg', alt: '阶段 3：坦然接受女装',
-        title: '坦然接受女装', state: '防线出现裂缝',
-        desc: '但人的适应能力，有时候远比自己想象得更强。几分钟前还在抗拒的人，现在已经安静地站在镜头前。没有人知道这中间到底发生了什么。' },
-      { img: 'photos/sweet-04.jpg', alt: '阶段 4：戴上项链',
-        title: '戴上项链', state: '开始完善细节',
-        desc: '到了这一步，事情已经从"被迫参与"慢慢走向了"顺手完善"。衣服都穿了，再加一条项链，好像也没有什么不合理。小哈的原则，开始以一种非常温和的方式后退。' },
-      { img: 'photos/sweet-05.jpg', alt: '阶段 5：抗拒胸垫',
-        title: '抗拒胸垫', state: '第二次强烈抵抗',
-        desc: '当新的道具出现，小哈再次短暂找回了自己的坚持。他似乎很清楚，这一步和前面那些不太一样。所以这一次，拒绝得格外认真。' },
-      { img: 'photos/sweet-06.jpg', alt: '阶段 6：接受胸垫',
-        title: '接受胸垫', state: '原则再次调整',
-        desc: '事实证明，原则并不是消失了。只是会根据现场情况，进行一些灵活调整。此时已经很难判断，到底是别人还在劝他，还是他自己已经不太想拒绝了。' },
-      { img: 'photos/sweet-07.jpg', alt: '阶段 7：穿上鞋',
-        title: '穿上鞋', state: '造型彻底闭环',
-        desc: '衣服、妆容、项链、鞋。到这里，"只是随便玩玩"已经基本失去了说服力。小哈站在那里，整个造型终于完整了。' },
-      { img: 'photos/sweet-08.jpg', alt: '阶段 8：初见端倪',
-        title: '初见端倪', state: '气质开始出现',
-        desc: '真正有意思的变化，是从这里开始的。不是衣服，不是妆，也不是动作。而是某种原本没有人预料到的气质，突然开始往外冒。他好像真的有点适合。' },
-      { img: 'photos/sweet-09.jpg', alt: '阶段 9：气质外溢',
-        title: '气质外溢', state: '开始无需指导',
-        desc: '这个阶段已经没人再告诉他该怎么站、怎么坐、怎么看镜头。动作开始自然，神情也越来越从容。那种属于恶搞的感觉正在慢慢消失，取而代之的是一种奇怪的合理。' },
-      { img: 'photos/sweet-10.jpg', alt: '阶段 10：沪上贵气已成',
-        title: '沪上贵气已成', state: '最终阶段 · 已无需帮助',
-        desc: '到这里，小哈已经完全不需要任何人的帮助。坐姿从容，神情稳定，甚至隐约有了一种刚逛完商场、准备去喝下午茶的气质。\n不是少女，也不是单纯的女装。\n更像是一位见过世面、讲究体面、对生活有自己要求的上海婶子。\n高贵、从容，而且莫名合理。\n一个男人的蜕变，到这里终于完成。',
-        progress: '觉醒度：100%', finalLine: '最终判定：沪上贵气型婶子' }
+  /* ================= 曹学艺：隐藏形态（原地切换，机制同陈明远） ================= */
+  var caoCard = document.getElementById('person-cao');
+  var caoToggle = document.getElementById('cao-toggle');
+  if (caoCard && caoToggle) {
+    /* 10 个阶段，每个阶段一套独立文案 */
+    var CAO = [
+      { t: '开始化妆', s: '尚未察觉危险', p: 5,
+        d: '一切都从“随便化一下”开始。\n此时的小哈甚至还有一点配合。\n他大概以为，这只是今天众多玩笑中的一个。' },
+      { t: '抗拒穿女装', s: '明确拒绝', p: 12,
+        d: '真正的衣服出现以后，他终于意识到事情不太对劲。\n抗拒很真实，态度也很坚决。\n这是他第一次认真考虑，今天是不是不该回这个家。' },
+      { t: '坦然接受女装', s: '防线出现裂缝', p: 30,
+        d: '但人的适应能力，有时候远比自己想象得更强。\n几分钟前还在抗拒的人，现在已经安静地站在镜头前。\n没有人知道这中间到底发生了什么。' },
+      { t: '戴上项链', s: '开始完善细节', p: 40,
+        d: '到了这一步，事情已经从“被迫参与”慢慢走向了“顺手完善”。\n衣服都穿了，再加一条项链，好像也没有什么不合理。\n小哈的原则，开始以一种非常温和的方式后退。' },
+      { t: '抗拒胸垫', s: '第二次重大抵抗', p: 46,
+        d: '当新的道具出现，小哈短暂地重新找回了自己的坚持。\n他似乎很清楚：\n有些东西一旦戴上，事情的性质可能就不一样了。\n所以这一刻，他拒绝得格外认真。' },
+      { t: '接受胸垫', s: '原则再次调整', p: 60,
+        d: '后来的事情证明，原则没有消失。\n只是会根据现场情况进行一些灵活调整。\n此时已经很难判断，到底是大家还在劝他，还是他自己已经不太想拒绝了。' },
+      { t: '穿上鞋', s: '造型正式闭环', p: 72,
+        d: '衣服、妆容、项链、鞋。\n到这里，“只是随便玩玩”已经基本失去了说服力。\n整套造型终于完整了。\n而小哈本人，看起来也越来越平静。' },
+      { t: '初见端倪', s: '未知气质开始出现', p: 82,
+        d: '真正有意思的变化，是从这里开始的。\n不是衣服，不是妆，也不是鞋。\n而是某种原本谁都没预料到的气质，突然开始往外冒。\n他好像真的有点适合。' },
+      { t: '气质外溢', s: '已经无需指导', p: 93,
+        d: '到了这个阶段，已经没人再告诉他应该怎么站、怎么坐、怎么看镜头了。\n动作越来越自然，神情也越来越从容。\n原本属于恶搞的感觉正在一点一点消失。\n取而代之的，是一种令人意外的合理。' },
+      { t: '沪上贵气', s: '最终形态', p: 100,
+        d: '到这里，小哈已经完全不需要任何人的指导。\n坐姿从容，神情稳定。\n身上甚至隐约出现了一种刚逛完商场、下午准备约姐妹喝茶的气质。\n不是少女。\n也已经不只是简单的女装。\n更像一位见过世面、讲究体面、对生活有自己要求的高贵上海婶子。\n高贵，从容，而且莫名合理。\n一个男人的蜕变，至此完成。',
+        verdict: '最终判定：沪上贵气型婶子' }
     ];
+    var CAO_IMG = [
+      'photos/sweet-01.jpg', 'photos/sweet-02.jpg', 'photos/sweet-03.jpg', 'photos/sweet-04.jpg', 'photos/sweet-05.jpg',
+      'photos/sweet-06.jpg', 'photos/sweet-07.jpg', 'photos/sweet-08.jpg', 'photos/sweet-09.jpg', 'photos/sweet-10.jpg'
+    ];
+    var CAO_STAY = 4800;   /* 每阶段停留（动画结束后再计时） */
+    var CAO_READ = 1300;   /* 进入动画大致完成的时长 */
 
-    var cImg = conv.querySelector('.convert-media img');
-    var cNo = conv.querySelector('.convert-content .conv-no');
-    var cTitle = conv.querySelector('.conv-title');
-    var cState = conv.querySelector('.conv-state');
-    var cDesc = conv.querySelector('.conv-desc');
-    var cProg = conv.querySelector('.conv-prog');
-    var cBar = conv.querySelector('.conv-bar');
-    var cBarFill = cBar.querySelector('i');
-    var cPct = conv.querySelector('.conv-pct');
-    var cFinal = conv.querySelector('.conv-final');
-    var cCount = conv.querySelector('.convert-count .cur');
-    var cPrev = conv.querySelector('.conv-prev');
-    var cNext = conv.querySelector('.conv-next');
-    var cPlay = conv.querySelector('.conv-play');
-    var cDots = conv.querySelector('.conv-dots');
+    var caoStage = document.getElementById('cao-stage');
+    var caoStageImg = document.getElementById('cao-stage-img');
+    var caoReveal = caoStage.querySelector('.cao-reveal');
+    var caoNotes = document.getElementById('cao-notes');
+    var caoFile = document.getElementById('cao-file');
+    var caoFinalForm = caoCard.querySelector('.cao-final-form');
+    var cfSets = caoNotes.querySelectorAll('.dup-set');
+    /* 阶段档案里的 .cf-cur 与控制条的 .cf-cur 是两处，渲染时一起更新 */
+    var cfTitle = caoFile.querySelector('.cf-title');
+    var cfState = caoFile.querySelector('.cf-state-v');
+    var cfDesc = caoFile.querySelector('.cf-desc');
+    var cfBarFill = caoFile.querySelector('.cf-bar i');
+    var cfBar = caoFile.querySelector('.cf-bar');
+    var cfPct = caoFile.querySelector('.cf-pct');
+    var cfVerdict = caoFile.querySelector('.cf-verdict');
+    var cfCountCur = caoNotes.querySelector('.cf-count .cf-cur');
+    var cfPrev = caoNotes.querySelector('.cf-prev');
+    var cfNext = caoNotes.querySelector('.cf-next');
+    var cfPlay = caoNotes.querySelector('.cf-play');
+    var cfDots = caoNotes.querySelector('.cf-dots');
 
-    var cur = 0, isAnimating = false, isPlaying = false, playTimer = null, finalTimer = null;
+    var caoIdx = 0, caoOn = false, caoPlaying = false, caoTimer = null, caoVerdictTimer = null, caoBusy = false;
+
+    function caoPad(n) { return (n < 10 ? '0' : '') + n; }
 
     /* 阶段圆点 */
-    STAGES.forEach(function (s, i) {
+    CAO.forEach(function (st, i) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'conv-dot';
-      b.textContent = (i + 1);
-      b.setAttribute('aria-label', '跳到阶段 ' + (i + 1) + '：' + s.title);
-      b.setAttribute('aria-current', i === 0 ? 'true' : 'false');
-      b.addEventListener('click', function () { goTo(i); });
-      cDots.appendChild(b);
+      b.className = 'cf-dot';
+      b.setAttribute('aria-label', '跳到阶段 ' + (i + 1) + '：' + st.t);
+      b.setAttribute('aria-current', 'false');
+      b.addEventListener('click', function () { caoGo(i, true); });
+      cfDots.appendChild(b);
     });
 
-    function pad(n) { return (n < 10 ? '0' : '') + n; }
-
-    function fill(idx, animate) {
-      var s = STAGES[idx];
-      var pct = Math.round((idx + 1) / STAGES.length * 100);
-      cImg.setAttribute('src', s.img);
-      cImg.setAttribute('alt', s.alt);
-      cNo.innerHTML = '阶段 <span class="cur">' + pad(idx + 1) + '</span>';
-      cTitle.textContent = s.title;
-      cState.innerHTML = '<span class="k">阶段状态</span>' + ' ' + s.state;
-      cDesc.innerHTML = s.desc.split('\n').map(function (t) { return '<p>' + t + '</p>'; }).join('');
-      cCount.textContent = pad(idx + 1);
-      cPct.textContent = pct + '%';
-      cBar.setAttribute('aria-label', '蜕变进度 ' + pct + '%');
-      if (animate) { cBarFill.style.transition = 'none'; cBarFill.style.width = '0%'; }
-      Array.prototype.forEach.call(cDots.children, function (d, i) {
-        d.setAttribute('aria-current', i === idx ? 'true' : 'false');
+    function caoRender(i) {
+      var st = CAO[i];
+      caoStageImg.setAttribute('src', CAO_IMG[i]);
+      caoStageImg.setAttribute('alt', '阶段 ' + (i + 1) + '：' + st.t);
+      Array.prototype.forEach.call([caoFile.querySelector('.cf-cur'), cfCountCur], function (el) { el.textContent = caoPad(i + 1); });
+      cfTitle.textContent = st.t;
+      cfState.textContent = st.s;
+      cfDesc.innerHTML = st.d.split('\n').map(function (line) { return '<p>' + line + '</p>'; }).join('');
+      cfPct.textContent = st.p + '%';
+      cfBar.setAttribute('aria-label', '蜕变进度 ' + st.p + '%');
+      cfBarFill.style.animation = 'none';
+      cfBarFill.style.width = '0%';
+      void cfBarFill.offsetWidth;
+      cfBarFill.style.animation = 'none';
+      cfBarFill.style.transition = 'width ' + (CAO_READ - 200) + 'ms cubic-bezier(.22,.75,.2,1)';
+      cfBarFill.style.width = st.p + '%';
+      Array.prototype.forEach.call(cfDots.children, function (d, k) {
+        d.setAttribute('aria-current', k === i ? 'true' : 'false');
       });
-      cPrev.disabled = (idx === 0);
-      cNext.disabled = (idx === STAGES.length - 1);
-      /* 最终判定：稍后才浮现 */
-      cFinal.classList.remove('is-shown');
-      cFinal.textContent = '';
-      if (finalTimer) { clearTimeout(finalTimer); }
-      if (s.finalLine) {
-        finalTimer = setTimeout(function () { cFinal.textContent = s.finalLine; cFinal.classList.add('is-shown'); }, 1200);
+      cfPrev.disabled = (i === 0);
+      cfNext.disabled = (i === CAO.length - 1);
+      /* 最终判定：等 800ms 再浮现 */
+      cfVerdict.classList.remove('is-shown');
+      cfVerdict.textContent = '';
+      if (caoVerdictTimer) { clearTimeout(caoVerdictTimer); }
+      /* 名字下方的最终形态：只在第 10 阶段浮现 */
+      var last = (i === CAO.length - 1);
+      caoFinalForm.classList.toggle('is-shown', last);
+      caoFinalForm.setAttribute('aria-hidden', last ? 'false' : 'true');
+      if (last && st.verdict) {
+        caoVerdictTimer = setTimeout(function () {
+          cfVerdict.textContent = st.verdict;
+          cfVerdict.classList.add('is-shown');
+        }, 800);
       }
-      /* 进度条：先归零，再动到目标宽度 */
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          cBarFill.style.transition = '';
-          cBarFill.style.width = pct + '%';
-        });
+    }
+
+    /* 切到第 i 阶段：图片从左向右揭开，文案随后分层浮现 */
+    function caoGo(i, fromUser) {
+      if (i < 0 || i >= CAO.length || i === caoIdx && caoOn) { if (i === caoIdx) { return; } }
+      caoIdx = i;
+      caoBusy = true;
+      /* 重放揭开的动画 */
+      caoReveal.style.animation = 'none';
+      void caoReveal.offsetWidth;
+      caoReveal.style.animation = '';
+      caoFile.classList.remove('is-reading');
+      void caoFile.offsetWidth;
+      caoRender(i);
+      caoFile.classList.add('is-reading');
+      if (caoTimer) { clearTimeout(caoTimer); caoTimer = null; }
+      caoBusy = false;
+      if (caoPlaying) { caoSchedule(); }
+      if (fromUser) { /* 用户手动操作后继续按原节奏播放 */ }
+    }
+
+    /* 等动画基本完成后再开始计算停留时间 */
+    function caoSchedule() {
+      if (caoTimer) { clearTimeout(caoTimer); }
+      caoTimer = setTimeout(function () {
+        if (!caoPlaying || !caoOn) { return; }
+        if (caoIdx >= CAO.length - 1) { caoStopPlay(); return; }  /* 停在最终形态，不循环 */
+        caoGo(caoIdx + 1);
+      }, CAO_READ + CAO_STAY);
+    }
+
+    function caoStartPlay() {
+      caoPlaying = true;
+      cfPlay.textContent = '❙❙';
+      cfPlay.setAttribute('aria-label', '暂停播放');
+      caoSchedule();
+    }
+    function caoStopPlay() {
+      caoPlaying = false;
+      cfPlay.textContent = '▶';
+      cfPlay.setAttribute('aria-label', '继续播放');
+      if (caoTimer) { clearTimeout(caoTimer); caoTimer = null; }
+    }
+
+    function caoEnter() {
+      caoOn = true;
+      caoCard.classList.add('hidden-mode');
+      caoStage.setAttribute('aria-hidden', 'false');
+      caoToggle.setAttribute('aria-pressed', 'true');
+      Array.prototype.forEach.call(cfSets, function (set) {
+        var on = set.getAttribute('data-set') === 'hidden';
+        set.classList.toggle('is-on', on);
+        set.classList.toggle('is-off', !on);
       });
+      caoIdx = -1;
+      caoGo(0);          /* 立即从第 1 张开始 */
+      caoStartPlay();    /* 无需再点开始播放 */
     }
 
-    /* 阶段切换：先淡出 → 换内容 → 图片揭开 + 文案分层浮现（总计约 1.0s） */
-    function applyStage(idx) {
-      var s = STAGES[idx];
-      var pre = new Image();
-      /* 关键节点：图片解码完成后再开始，避免揭开时出现空白 */
-      var begin = function () {
-        conv.classList.remove('is-switching');
-        void conv.offsetWidth;
-        conv.classList.add('is-revealing');
-        setTimeout(function () {
-          conv.classList.remove('is-revealing');
-          isAnimating = false;
-        }, 1100);
-      };
-      pre.onload = begin;
-      pre.onerror = begin;
-      pre.src = s.img;
-      conv.classList.add('is-switching');
-      setTimeout(function () {
-        fill(idx, true);
-        if (pre.complete) { begin(); }
-      }, 160);
+    function caoExit() {
+      caoOn = false;
+      caoStopPlay();
+      if (caoVerdictTimer) { clearTimeout(caoVerdictTimer); caoVerdictTimer = null; }
+      caoCard.classList.remove('hidden-mode');
+      caoStage.setAttribute('aria-hidden', 'true');
+      caoToggle.setAttribute('aria-pressed', 'false');
+      caoFinalForm.classList.remove('is-shown');
+      caoFinalForm.setAttribute('aria-hidden', 'true');
+      cfVerdict.classList.remove('is-shown');
+      cfVerdict.textContent = '';
+      Array.prototype.forEach.call(cfSets, function (set) {
+        var on = set.getAttribute('data-set') === 'normal';
+        set.classList.toggle('is-on', on);
+        set.classList.toggle('is-off', !on);
+      });
+      caoIdx = 0;
     }
 
-    function goTo(idx) {
-      if (isAnimating || idx === cur) { return; }
-      isAnimating = true;
-      cur = idx;
-      applyStage(idx);
-    }
-    function step(delta) {
-      var n = cur + delta;
-      if (n < 0 || n >= STAGES.length) { return; }
-      goTo(n);
-    }
-
-    cPrev.addEventListener('click', function () { step(-1); });
-    cNext.addEventListener('click', function () { step(1); });
-    conv.addEventListener('keydown', function (ev) {
-      if (ev.key === 'ArrowLeft') { ev.preventDefault(); step(-1); }
-      if (ev.key === 'ArrowRight') { ev.preventDefault(); step(1); }
+    caoToggle.addEventListener('click', function () { if (caoOn) { caoExit(); } else { caoEnter(); } });
+    cfPrev.addEventListener('click', function () { caoGo(caoIdx - 1, true); });
+    cfNext.addEventListener('click', function () { caoGo(caoIdx + 1, true); });
+    cfPlay.addEventListener('click', function () { if (caoPlaying) { caoStopPlay(); } else { caoStartPlay(); } });
+    caoCard.addEventListener('keydown', function (ev) {
+      if (!caoOn) { return; }
+      if (ev.key === 'ArrowLeft') { ev.preventDefault(); caoGo(caoIdx - 1, true); }
+      if (ev.key === 'ArrowRight') { ev.preventDefault(); caoGo(caoIdx + 1, true); }
     });
-
-    /* 自动播放：图片与文案走同一套切换流程，严格同步 */
-    function stopPlay() {
-      isPlaying = false;
-      if (playTimer) { clearInterval(playTimer); playTimer = null; }
-      cPlay.textContent = '▶ 自动播放';
-      cPlay.setAttribute('aria-pressed', 'false');
-    }
-    function startPlay() {
-      isPlaying = true;
-      cPlay.textContent = '⏸ 暂停';
-      cPlay.setAttribute('aria-pressed', 'true');
-      playTimer = setInterval(function () {
-        if (document.hidden) { return; }
-        if (cur === STAGES.length - 1) { stopPlay(); return; }
-        if (!isAnimating) { applyStage(cur + 1); cur = cur + 1; isAnimating = true; }
-      }, 6500);
-    }
-    cPlay.addEventListener('click', function () { if (isPlaying) { stopPlay(); } else { startPlay(); } });
-    conv.addEventListener('mouseenter', function () { if (isPlaying && playTimer) { clearInterval(playTimer); playTimer = null; } });
-    conv.addEventListener('mouseleave', function () { if (isPlaying && !playTimer) { startPlay(); } });
-
-    /* 首屏按第 1 阶段渲染一次，保证「上一张」从一开始就是禁用的 */
-    fill(0, false);
+    /* 隐藏形态下预加载全部 10 张，保证揭开时不空白 */
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden && caoPlaying) { caoStopPlay(); }
+    });
   }
 
   /* ================= 私人档案入口 ================= */
