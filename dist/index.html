@@ -247,6 +247,11 @@ body.lb-open{overflow:hidden}
 .person-notes h4{margin:0 0 14px;font-size:12px;letter-spacing:3px;color:#c8fa75;font-weight:600}
 .person-notes p{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa}
 .person-notes p+p{margin-top:14px}
+/* 小记可以有两套文案（正常形态 / 隐藏形态），由脚本切换 is-on 决定显示哪一套。
+   缺了下面这两条，两套会同时渲染 —— 看起来就像"人物小记和隐藏内容重复了"。
+   注意：.person-quote .notes-set p 是引语区的另一套排版，与本条无关。 */
+.notes-set{display:none}
+.notes-set.is-on{display:block}
 .person-quote{margin:26px 0 0;padding:22px 0 0;border-top:1px solid #ffffff1f;position:relative}
 .quote-body{display:grid}
 .person-quote .notes-set p{margin:0;font-size:clamp(17px,1.7vw,21px);line-height:1.75;color:#e8ede3;letter-spacing:-.2px}
