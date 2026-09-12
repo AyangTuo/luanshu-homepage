@@ -1,2 +1,7 @@
 .tools/
 .wrangler/
+
+# 照片原图：只留在本地，不进仓库
+/photo/
+/IMG_*.JPG
+/IMG_*.jpg
