@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="locked">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>栾树 LUANSHU · 个人主页</title>
@@ -11,8 +11,26 @@
 <meta property="og:description" content="一个人，一片自己的天地。保持好奇，慢慢生长。">
 <meta property="og:url" content="https://luanshu.de5.net">
 <meta name="twitter:card" content="summary">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <link rel="canonical" href="https://luanshu.de5.net">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23c8fa75'/%3E%3Ctext x='18' y='47' font-size='44' font-family='Arial' font-weight='bold' fill='%23161b16'%3EL%3C/text%3E%3C/svg%3E">
+<script>
+/* 私人档案：在渲染任何内容前判断是否已通过验证，避免已登录用户先闪一下密码页。
+   这里只读取一个时间戳，不含任何密码信息。 */
+(function () {
+  var KEY = 'private_site_auth';
+  var t = null;
+  try { t = window.localStorage.getItem(KEY); } catch (e) { t = null; }
+  if (!t) { return; }
+  var ts = parseInt(t.slice(0, 13), 10);
+  if (!ts || isNaN(ts)) { return; }
+  if ((Date.now() - ts) > 2592000000) { return; }
+  document.documentElement.classList.remove('locked');
+  document.documentElement.className += ' authed';
+})();
+</script>
 <style>
 /* ============ 基础 ============ */
 *{box-sizing:border-box}
@@ -319,6 +337,49 @@ body.lb-open{overflow:hidden}
 .notes-set p{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa}
 .notes-set p+p{margin-top:14px}
 
+/* ============ 私人档案入口 ============ */
+html.locked,html.locked body{overflow:hidden}
+html.locked .shell,html.locked .skip,html.locked .progress,html.locked .lightbox{display:none}
+.gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:6vw;background:#101410;opacity:1;transition:opacity .55s ease,visibility .55s}
+.gate::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(720px 520px at 50% 12%,#c8fa7517,transparent 62%),radial-gradient(560px 460px at 50% 100%,#3d6f5a1f,transparent 62%)}
+/* 已通过验证的回头访客：首次绘制前就把入口藏掉，不会闪 */
+html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
+.gate.gate-done{opacity:0;visibility:hidden}
+.gate-card{position:relative;width:100%;max-width:430px;text-align:center}
+.gate-eyebrow{margin:0 0 26px;font-size:11px;letter-spacing:5px;color:#c8fa7580}
+.gate-title{margin:0;font-size:clamp(30px,4.6vw,44px);font-weight:600;letter-spacing:2px;color:#f4f5ef}
+.gate-title::after{content:"";display:block;width:48px;height:2px;background:#c8fa75;margin:20px auto 0}
+.gate-sub{margin:24px 0 34px;font-size:14.5px;line-height:1.95;color:#a4ad9f}
+.gate-form{margin:0}
+.gate-field{position:relative;display:flex;align-items:center;min-width:0}
+.gate-field input{width:100%;min-width:0;flex:1 1 auto;font:inherit;font-size:15px;letter-spacing:2px;color:#f4f5ef;background:#161c16;border:1px solid #ffffff2b;border-radius:30px;padding:15px 74px 15px 22px;transition:border-color .3s,background .3s,box-shadow .3s;text-align:center}
+.gate-field input::placeholder{color:#7d867a;letter-spacing:2px}
+.gate-field input:focus{outline:none;border-color:#c8fa75;background:#1a211a;box-shadow:0 0 0 3px #c8fa751f}
+.gate-eye{position:absolute;right:8px;font:inherit;font-size:11.5px;letter-spacing:1px;color:#8f998a;background:#ffffff0d;border:1px solid #ffffff1f;border-radius:20px;padding:7px 13px;cursor:pointer;transition:all .25s}
+.gate-eye:hover{color:#c8fa75;border-color:#c8fa7566;background:#c8fa7514}
+.gate-eye:focus-visible{outline:2px solid #c8fa75;outline-offset:2px}
+.gate-msg{margin:14px 0 0;min-height:20px;font-size:13.5px;letter-spacing:.5px}
+.gate-msg.is-err{color:#e08a80}
+.gate-msg.is-ok{color:#c8fa75}
+.gate-submit{margin-top:20px;width:100%;font:inherit;font-size:15px;letter-spacing:4px;color:#172012;background:#c8fa75;border:0;border-radius:30px;padding:16px 20px;cursor:pointer;transition:background .3s,transform .3s,box-shadow .3s}
+.gate-submit:hover:not(:disabled){background:#dcffa5;transform:translateY(-2px);box-shadow:0 14px 30px -12px #c8fa7599}
+.gate-submit:focus-visible{outline:2px solid #c8fa75;outline-offset:4px}
+.gate-submit:disabled{opacity:.6;cursor:default}
+.gate-foot{margin:44px 0 0;font-size:10px;letter-spacing:3px;color:#5d665a}
+@keyframes gateShake{0%,100%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(6px)}54%{transform:translateX(-4px)}72%{transform:translateX(3px)}88%{transform:translateX(-1px)}}
+.gate-field.is-shake{animation:gateShake .44s cubic-bezier(.36,.07,.19,.97)}
+.nav-exit{color:#7d867a}
+.nav-exit:hover{color:#e08a80}
+@media(max-width:760px){
+  .gate{padding:8vw 7vw}
+  .gate-card{max-width:100%}
+  .gate-sub{font-size:14px;margin:20px 0 28px}
+  .gate-foot{margin-top:34px;letter-spacing:2px}
+  .gate-title::after{margin-top:16px}
+  .gate-eye{padding:6px 10px;font-size:11px;right:6px}
+  .gate-field input{padding:14px 62px 14px 18px;letter-spacing:1px}
+}
+
 /* ============ 响应式 ============ */
 @media(min-width:1500px){.hero{min-height:760px}}
 @media(max-width:1080px){
@@ -415,6 +476,30 @@ body.lb-open{overflow:hidden}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <script>
+  /* 紧跟在入口元素之后同步执行：已登录的访客直接把入口淡出（此时尚未绘制） */
+  if (document.documentElement.classList.contains('authed')) {
+    document.getElementById('gate').classList.add('gate-done');
+  }
+  </script>
+  <div class="gate-card">
+    <p class="gate-eyebrow">PRIVATE ARCHIVE</p>
+    <h1 class="gate-title">私人档案</h1>
+    <p class="gate-sub">这里存放着一些只属于我们几个人的故事。</p>
+    <form class="gate-form" id="gate-form" novalidate>
+      <label class="sr" for="gate-input">访问密码</label>
+      <div class="gate-field">
+        <input id="gate-input" type="password" inputmode="numeric" autocomplete="off"
+               placeholder="输入访问密码" aria-describedby="gate-msg">
+        <button class="gate-eye" id="gate-eye" type="button" aria-label="显示密码">显示</button>
+      </div>
+      <p class="gate-msg" id="gate-msg" role="status" aria-live="polite"></p>
+      <button class="gate-submit" id="gate-submit" type="submit">进入</button>
+    </form>
+    <p class="gate-foot">PRIVATE ARCHIVE · FOR FRIENDS ONLY</p>
+  </div>
+</div>
 <a class="skip" href="#main">跳到主要内容</a>
 <div class="progress" id="progress" aria-hidden="true"></div>
 
@@ -429,6 +514,7 @@ body.lb-open{overflow:hidden}
     <a href="#works">在做的事</a>
     <a href="#timeline">时间线</a>
     <a href="#contact">联系</a>
+    <a class="nav-exit" href="#" id="gate-exit">退出</a>
     <a href="https://luanshu.de5.net">我的域名 ↗</a>
   </nav>
 </header>
@@ -1209,6 +1295,136 @@ body.lb-open{overflow:hidden}
     /* 首屏按第 1 阶段渲染一次，保证「上一张」从一开始就是禁用的 */
     fill(0, false);
   }
+
+  /* ================= 私人档案入口 ================= */
+  (function () {
+    /* 这里只有密码的 SHA-256 哈希，明文不出现任何地方 */
+    var AUTH_HASH = 'fa7a4becdbeab902d78a0a4ab55f9b39b37919dbc37b729e6427d64b86115013';
+    var KEY = 'private_site_auth';
+    var TTL = 2592000000; /* 30 天 */
+
+    var gate = document.getElementById('gate');
+    var form = document.getElementById('gate-form');
+    var input = document.getElementById('gate-input');
+    var eye = document.getElementById('gate-eye');
+    var msg = document.getElementById('gate-msg');
+    var submit = document.getElementById('gate-submit');
+    var exitLink = document.getElementById('gate-exit');
+    if (!gate || !form) { return; }
+
+    function unlocked() { return !document.documentElement.classList.contains('locked'); }
+
+    function unlock() {
+      document.documentElement.classList.remove('locked');
+      document.documentElement.className += ' authed';
+      gate.classList.add('gate-done');
+      try { window.localStorage.setItem(KEY, String(Date.now()) + AUTH_HASH); } catch (e) {}
+      /* 归还焦点并恢复滚动 */
+      try { input.blur(); } catch (e) {}
+      window.scrollTo(0, 0);
+      /* 让页面的首屏入场动画从头播一次 */
+      var root = document.documentElement;
+      root.classList.remove('loaded');
+      requestAnimationFrame(function () { setTimeout(function () { root.classList.add('loaded'); }, 60); });
+    }
+
+    function lock() {
+      try { window.localStorage.removeItem(KEY); } catch (e) {}
+      document.documentElement.classList.add('locked');
+      document.documentElement.classList.remove('authed');
+      gate.classList.remove('gate-done');
+      form.reset();
+      input.type = 'password';
+      eye.textContent = '显示';
+      eye.setAttribute('aria-label', '显示密码');
+      msg.textContent = '';
+      msg.className = 'gate-msg';
+      submit.disabled = false;
+      submit.textContent = '进入';
+      window.scrollTo(0, 0);
+      /* 等淡出结束再聚焦，避免被过渡打断 */
+      setTimeout(function () { try { input.focus(); } catch (e) {} }, 600);
+    }
+
+    function sha256hex(str) {
+      var bytes = new TextEncoder().encode(str);
+      return crypto.subtle.digest('SHA-256', bytes).then(function (buf) {
+        return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+          return b.toString(16).padStart(2, '0');
+        }).join('');
+      });
+    }
+
+    function shake() {
+      var field = input.parentNode;
+      field.classList.remove('is-shake');
+      void field.offsetWidth;
+      field.classList.add('is-shake');
+      setTimeout(function () { field.classList.remove('is-shake'); }, 520);
+    }
+
+    function fail() {
+      msg.textContent = '密码不对，再想想。';
+      msg.className = 'gate-msg is-err';
+      shake();
+      input.select();
+    }
+
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      if (unlocked()) { return; }
+      var v = input.value;
+      if (!v) { fail(); return; }
+      if (!(window.crypto && crypto.subtle)) {
+        /* 极老浏览器兜底：不比对，直接提示 */
+        msg.textContent = '这个浏览器太旧了，换一个再试。';
+        msg.className = 'gate-msg is-err';
+        return;
+      }
+      submit.disabled = true;
+      sha256hex(v).then(function (h) {
+        if (h === AUTH_HASH) {
+          /* 先给一个短暂的过渡，而不是生硬跳转 */
+          msg.textContent = '验证通过，正在打开档案……';
+          msg.className = 'gate-msg is-ok';
+          submit.textContent = '验证通过';
+          input.disabled = true;
+          setTimeout(unlock, 560);
+        } else {
+          input.value = '';
+          submit.disabled = false;
+          fail();
+        }
+      }).catch(function () {
+        submit.disabled = false;
+        fail();
+      });
+    });
+
+    /* 再次输入时自动清除错误提示 */
+    input.addEventListener('input', function () {
+      if (msg.classList.contains('is-err')) { msg.textContent = ''; msg.className = 'gate-msg'; }
+    });
+
+    /* 显示 / 隐藏密码 */
+    eye.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      eye.textContent = show ? '隐藏' : '显示';
+      eye.setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
+      input.focus();
+    });
+
+    /* 退出私人档案 */
+    if (exitLink) {
+      exitLink.addEventListener('click', function (ev) { ev.preventDefault(); lock(); });
+    }
+
+    /* 已登录时不再干扰页面；未登录时聚焦输入框 */
+    if (!unlocked()) {
+      setTimeout(function () { try { input.focus(); } catch (e) {} }, 200);
+    }
+  })();
 })();
 </script>
 </body>
