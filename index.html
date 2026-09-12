@@ -193,7 +193,8 @@ footer .up:hover{transform:translateY(-3px)}
 .photo-col figure:hover figcaption{border-left-color:#c8fa75}
 .photo-col .idx{font-size:12px;letter-spacing:3px;color:#c8fa75}
 .photo-col figcaption strong{font-size:16px;font-weight:600;color:#e8ede3;letter-spacing:-.2px}
-.photo-col figcaption>span:last-child{font-size:14px;line-height:1.85;color:#a4ad9f;max-width:520px}
+.photo-col figcaption>span:not(.idx):not(.shot-at){font-size:14px;line-height:1.85;color:#a4ad9f;max-width:520px}
+.photo-col .shot-at{font-size:11.5px;letter-spacing:1.5px;color:#7d867a;font-variant-numeric:tabular-nums}
 /* 右侧文案 */
 .photo-story{min-width:0}
 .photo-story p{margin:0;font-size:16px;line-height:2.05;color:#aeb6aa}
@@ -261,7 +262,8 @@ body.lb-open{overflow:hidden}
   .photo-col img{border-radius:9px}
   .photo-col figcaption{margin-top:11px;gap:5px;padding-left:12px}
   .photo-col figcaption strong{font-size:13.5px;line-height:1.5}
-  .photo-col figcaption>span:last-child{font-size:12.5px;line-height:1.7}
+  .photo-col figcaption>span:not(.idx):not(.shot-at){font-size:12.5px;line-height:1.7}
+  .photo-col .shot-at{font-size:10.5px;letter-spacing:1px}
   .photo-col .idx{font-size:11px;letter-spacing:2px}
   .photo-story{gap:15px}
   .photo-story p{font-size:15px;line-height:1.95}
@@ -368,7 +370,7 @@ body.lb-open{overflow:hidden}
       <div class="section-label reveal"><b>02 / A NIGHT TO REMEMBER</b>那个夏天的夜晚</div>
       <div>
         <h2 id="photos-title" class="reveal d1">那年夏天没回家，<br>我们<em>四个</em>把夜晚走了一遍。</h2>
-        <p class="reveal d2">故事不长，但笑点集中，尤其是关于一部电视剧的那部分。往下看 ↓</p>
+        <p class="reveal d2">2026 年 7 月 25 日晚上喝到 26 日凌晨 —— 故事不长，但笑点集中，尤其是关于一部电视剧的那部分。往下看 ↓</p>
       </div>
     </div>
 
@@ -397,6 +399,7 @@ body.lb-open{overflow:hidden}
             <span class="idx">02</span>
             <strong>拍照的人没在照片里</strong>
             <span>刘宁也不在 —— 他喝完就先睡了，错过了全部剧情。</span>
+            <span class="shot-at">2026.07.25 夜 → 07.26 凌晨</span>
           </figcaption>
         </figure>
       </div>
@@ -497,10 +500,15 @@ body.lb-open{overflow:hidden}
       <div class="section-label reveal"><b>05 / TIMELINE</b>这几年的脚步声</div>
       <div>
         <h2 id="timeline-title" class="reveal d1">一步一步，<em>慢慢生长</em>。</h2>
-        <p class="reveal d2">不是什么了不起的大事，只是些值得记下的节点。</p>
+        <p class="reveal d2">从 2024 到现在，还有一些值得记下的节点。</p>
       </div>
     </div>
     <ol class="timeline">
+      <li>
+        <time datetime="2026-07-26">2026 · 07 · 26</time>
+        <h3>凌晨，我们四个还在小区里溜达</h3>
+        <p>7 月 25 日晚上，五个人的酒局摆在 32 楼。喝完之后下楼溜达、拍照、聊《爱情公寓》，一直到天都快亮了才回去 —— 刘宁没赶上，他喝完就睡了。那天晚上的照片，在「那个夏夜」那一段。</p>
+      </li>
       <li>
         <time datetime="2026">2026</time>
         <h3>有了这个小屋</h3>
