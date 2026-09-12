@@ -247,8 +247,9 @@ body.lb-open{overflow:hidden}
 .person-notes h4{margin:0 0 14px;font-size:12px;letter-spacing:3px;color:#c8fa75;font-weight:600}
 .person-notes p{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa}
 .person-notes p+p{margin-top:14px}
-/* 小记可以有两套文案（正常形态 / 隐藏形态），由脚本切换 is-on 决定显示哪一套。
-   缺了下面这两条，两套会同时渲染 —— 看起来就像"人物小记和隐藏内容重复了"。
+/* 小记有两套文案（正常形态 / 隐藏形态），但切换不靠这两条 ——
+   脚本会把当前那一套整体摘下、把另一套挂上去，同一时刻文档里只有一个 .notes-set。
+   这两条只是兜底：万一以后有人又往 HTML 里直接写第二套，它也不会跟着露出来。
    注意：.person-quote .notes-set p 是引语区的另一套排版，与本条无关。 */
 .notes-set{display:none}
 .notes-set.is-on{display:block}
@@ -734,18 +735,13 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
         <div class="person-notes">
           <h4>人物小记</h4>
           <div class="notes-body" id="chen-notes">
+            <!-- 这里只放正常形态这一套小记。
+                 女装形态的小记不在 HTML 里 —— 它只以数据形式存在脚本中，
+                 点击标签时才被创建并挂载，未激活时根本不存在于文档中。 -->
             <div class="notes-set is-on" data-set="normal">
               <p>一个很有风趣的人，表演欲和表现力都很强。平时聊天偶尔就会突然进入"演起来了"的状态，到了镜头前更是几乎不需要预热，Pose 说来就来。</p>
               <p>而且该说不说，确实挺帅。</p>
               <p>《爱情公寓》方面属于资深研究人员，台词、人物和桥段都很熟。那天晚上一路聊下来，他也是主要输出之一。</p>
-            </div>
-            <div class="notes-set" data-set="sweet">
-              <p>有些天赋平时藏得很深，直到换了一套衣服才突然暴露出来。</p>
-              <p>陈明远进入这个形态之后，原本的表演天赋和镜头感似乎找到了新的方向。</p>
-              <p>该说不说，确实很甜。</p>
-              <p>从表情、姿态到镜头前的状态，都有一种意外的自然感。与其说是在"尝试女装"，不如说更像某个隐藏角色突然被解锁了。</p>
-              <p>目前觉醒程度：半觉醒。</p>
-              <p>至于完全觉醒之后会发生什么，暂时没人知道。</p>
             </div>
           </div>
         </div>
@@ -1254,7 +1250,52 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
     var PHOTO = { normal: 'photos/chen-mingyuan.jpg', sweet: 'photos/chen-mingyuan-sweet.jpg' };
     var photoEl = document.getElementById('chen-photo');
     var photoBox = photoEl.parentNode;
-    var notes = document.querySelectorAll('#chen-notes .notes-set');
+    var notesBody = document.getElementById('chen-notes');
+    if (!notesBody) { return; }
+
+    /* ===== 两套小记是真正的二选一，不是叠在一起靠 CSS 藏 =====
+       女装形态的文案只以数据形式存在这里，没有激活时它不是 DOM 的一部分，
+       所以既不会参与卡片渲染，也不可能被提前读到。
+       切换时把当前那一套整体摘下、把另一套挂上去 —— 同一时刻
+       #chen-notes 里永远只有一个 .notes-set。 */
+    var SWEET_NOTES = [
+      '有些天赋平时藏得很深，直到换了一套衣服才突然暴露出来。',
+      '陈明远进入这个形态之后，原本的表演天赋和镜头感似乎找到了新的方向。',
+      '该说不说，确实很甜。',
+      '从表情、姿态到镜头前的状态，都有一种意外的自然感。与其说是在"尝试女装"，不如说更像某个隐藏角色突然被解锁了。',
+      '目前觉醒程度：半觉醒。',
+      '至于完全觉醒之后会发生什么，暂时没人知道。'
+    ];
+    /* 摘下来的那一套暂存在这里（已脱离文档，页面上查不到） */
+    var notesCache = {};
+
+    function buildNotes(which) {
+      var wrap = document.createElement('div');
+      wrap.className = 'notes-set is-on';
+      wrap.setAttribute('data-set', which);
+      var list = (which === 'sweet') ? SWEET_NOTES : null;
+      if (list) {
+        for (var i = 0; i < list.length; i++) {
+          var p = document.createElement('p');
+          p.textContent = list[i];
+          wrap.appendChild(p);
+        }
+      }
+      return wrap;
+    }
+
+    function showNotes(which) {
+      var current = notesBody.firstElementChild;
+      if (current && current.getAttribute('data-set') === which) { return; }
+      var node = notesCache[which] || buildNotes(which);
+      delete notesCache[which];
+      if (current) {
+        notesCache[current.getAttribute('data-set')] = current;
+        notesBody.removeChild(current);
+      }
+      notesBody.appendChild(node);
+    }
+
     /* 引言只有一句，切换时直接换文字，任何时候 DOM 里都只存在当前这一句 */
     var quoteTextEl = document.getElementById('chen-quote-text');
     var QUOTE = { normal: '爱上哥你无需自卑🌹', sweet: '人家这么可爱，被喜欢也是没办法的事啦～🌹' };
@@ -1271,11 +1312,7 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
         : '陈明远在夜色里坐在金色的牛形雕塑上笑着看向镜头';
       if (photoEl.getAttribute('src') !== src) { photoEl.setAttribute('src', src); }
       photoEl.setAttribute('alt', alt);
-      Array.prototype.forEach.call(notes, function (set) {
-        var on = (set.getAttribute('data-set') === 'sweet') === isSweetMode;
-        set.classList.toggle('is-on', on);
-        set.classList.toggle('is-off', !on);
-      });
+      showNotes(isSweetMode ? 'sweet' : 'normal');
       if (quoteTextEl) { quoteTextEl.textContent = isSweetMode ? QUOTE.sweet : QUOTE.normal; }
       sweetBtn.setAttribute('aria-pressed', isSweetMode ? 'true' : 'false');
       person.classList.toggle('sweet-mode', isSweetMode);
