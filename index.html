@@ -234,7 +234,8 @@ body.lb-open{overflow:hidden}
 .person-notes p{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa}
 .person-notes p+p{margin-top:14px}
 .person-quote{margin:26px 0 0;padding:22px 0 0;border-top:1px solid #ffffff1f;position:relative}
-.person-quote p{margin:0;font-size:clamp(17px,1.7vw,21px);line-height:1.75;color:#e8ede3;letter-spacing:-.2px}
+.quote-body{display:grid}
+.person-quote .notes-set p{margin:0;font-size:clamp(17px,1.7vw,21px);line-height:1.75;color:#e8ede3;letter-spacing:-.2px}
 .person-quote cite{display:block;margin-top:12px;font-style:normal;font-size:12px;letter-spacing:2px;color:#8f998a}
 .jump{color:#c8fa75;border-bottom:1px solid #c8fa7566;transition:border-color .3s}
 .jump:hover{border-bottom-color:#c8fa75}
@@ -554,7 +555,14 @@ body.lb-open{overflow:hidden}
           </div>
         </div>
         <blockquote class="person-quote">
-          <p>待定（等他回复）</p>
+          <div class="quote-body" id="chen-quote">
+            <div class="notes-set is-on" data-set="normal">
+              <p>爱上哥你无需自卑[玫瑰]</p>
+            </div>
+            <div class="notes-set" data-set="sweet">
+              <p>爱上姐你无需自卑[玫瑰]</p>
+            </div>
+          </div>
           <cite>他留下的一句话</cite>
         </blockquote>
       </div>
@@ -850,7 +858,7 @@ body.lb-open{overflow:hidden}
     var PHOTO = { normal: 'photos/chen-mingyuan.jpg', sweet: 'photos/chen-mingyuan-sweet.jpg' };
     var photoEl = document.getElementById('chen-photo');
     var photoBox = photoEl.parentNode;
-    var notes = document.querySelectorAll('#chen-notes .notes-set');
+    var notes = document.querySelectorAll('#chen-notes .notes-set, #chen-quote .notes-set');
     var isSweetMode = false, swapTimer = null;
 
     /* 预加载女装照片，避免首次切换时出现空白 */
