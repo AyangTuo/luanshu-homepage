@@ -263,6 +263,36 @@ body.lb-open{overflow:hidden}
 .person-alias .alias-k{color:#8f998a;margin-right:10px;letter-spacing:2px}
 .person+.person{margin-top:20px}
 
+/* ============ 高洁月：她留下的话（默认收起）============ */
+/* 按钮走标签同款语言：深色底 + 细边框 + 荧光绿，
+   显式清掉浏览器默认按钮外观，免得渲染成一个方块嵌在药丸里。
+   dd 本身只当容器，边框交给 button 画，避免出现双层边框。 */
+.person-tags dd.tag-letter,.person-tags dd.tag-letter:hover{padding:0;border:0;background:none}
+.tag-letter button{
+  display:inline-flex;align-items:center;gap:9px;
+  font:inherit;font-size:13px;letter-spacing:.5px;white-space:nowrap;
+  color:#c8fa75;background:#c8fa750f;
+  border:1px solid #c8fa7566;border-radius:20px;padding:7px 15px;
+  cursor:pointer;transition:background .3s,border-color .3s,transform .3s}
+.tag-letter button:hover{background:#c8fa751f;border-color:#c8fa75}
+.tag-letter button:active{transform:translateY(1px)}
+.letter-caret{width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;
+  transform:rotate(45deg) translate(-1px,-1px);transition:transform .35s}
+.tag-letter button[aria-expanded="true"] .letter-caret{transform:rotate(-135deg) translate(-2px,-2px)}
+
+/* 展开区域：用 grid-template-rows 0fr → 1fr 做真正的"向下展开"，
+   高度不用写死，长文换多少行都能自适应 */
+.person-letter{
+  display:grid;grid-template-rows:0fr;opacity:0;
+  transition:grid-template-rows .42s cubic-bezier(.22,.75,.2,1),opacity .36s ease}
+.person-letter.is-open{grid-template-rows:1fr;opacity:1}
+.person-letter-inner{overflow:hidden;min-height:0}
+.person-letter-body{margin-top:26px;padding-top:24px;border-top:1px solid #ffffff1f}
+/* 分隔线铺满卡片正文宽度；正文本身收窄到易读行宽，但不做任何人为分段 */
+.person-letter-body p{margin:0;max-width:46em;font-size:15.5px;line-height:2.15;color:#aeb6aa;letter-spacing:.2px}
+@media(max-width:900px){.tag-letter button{font-size:12.5px;padding:6px 13px}}
+@media(prefers-reduced-motion:reduce){.person-letter,.letter-caret{transition:none}}
+
 /* ============ 神秘生物：几乎什么都没留下的档案 ============ */
 /* 除了唯一一句话，只剩一张横向的影像。
    影像用 contain 完整放进 3:4 相框 —— 不裁掉袋鼠的胳膊和那行红字，
@@ -794,6 +824,12 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
           <dd>四人组哥们</dd>
           <dd>美丽动人的大美女</dd>
           <dd>《爱情公寓》重度爱好者</dd>
+          <dd class="tag-letter">
+            <button type="button" id="gao-letter-toggle" aria-expanded="false" aria-controls="gao-letter">
+              <span id="gao-letter-label">她留下的话</span>
+              <span class="letter-caret" aria-hidden="true"></span>
+            </button>
+          </dd>
         </dl>
         <div class="person-notes">
           <h4>人物小记</h4>
@@ -808,6 +844,13 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
             <p>她很喜欢别人称呼她：</p>
             <p>"美丽动人的大美女。"</p>
             <p>最好一个字都不要少。</p>
+          </div>
+        </div>
+        <div class="person-letter" id="gao-letter" role="region" aria-labelledby="gao-letter-label">
+          <div class="person-letter-inner">
+            <div class="person-letter-body">
+              <p>回忆起刚刚结束不久的暑假合租生活 除去枯燥的学习生活 我的三个朋友真的给我带来了很多快乐 他们很迁就和包容我 经常帮我拿快递 带三明治 带好吃的 他们从没有一句不愿意 接水也从来没有喊过我 这些事情我都一直记得，谢谢你们！曹学艺一直很包容我 尽管我经常开他的玩笑 讲他的囧事 他从来没生过我气 只是假装恶狠狠的瞪我一眼 然后就笑了。暑假期间为了让我勤出门 经常带我出去买零食吃哈哈哈 他几乎每次出门都会问我需不需要带什么好吃的 认识陈明远也好久了 一直关系不错 他性格很好 也是那种非常愿意和你出去玩的好朋友 “去不去”“去”“吃不吃”“吃”其实他们三个都很捧场 不管我提议什么 他们基本上都会附和我 还有就是我没想到陈明远对《爱情公寓》的了解程度比我还深 但是我是不会认输的！栾家兴是我最晚认识的朋友 我起初对他的印象是一个比较腼腆话少的二次元男生 经过一段时间的相处之后 我发现他话真挺多的 每次我抛出一个话题 我和他能聊很长时间 我和他也是3201最爱熬夜的人 经常凌晨三四点我从房间出来接水 上厕所 总是能在客厅看到打游戏的他 我会说一句 “牛逼” 然后伸出大拇指给他点赞 他会点头向我示意 还经常会顺便问我“吃不吃夜宵”“要不要来点烧烤” 他是真挺能吃的 不过我想不明白他为什么不会变胖 睡眠时间也是一绝 能睡十二个小时的不是一般人</p>
+            </div>
           </div>
         </div>
         <blockquote class="person-quote">
@@ -1529,6 +1572,22 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
       if (document.hidden && caoPlaying) { caoPause(); }
     });
   }
+  /* ================= 高洁月：她留下的话 ================= */
+  /* 独立作用域，只碰自己这两个元素，和女装甜妹、男人蜕变互不影响 */
+  (function () {
+    var btn = document.getElementById('gao-letter-toggle');
+    var label = document.getElementById('gao-letter-label');
+    var box = document.getElementById('gao-letter');
+    if (!btn || !label || !box) { return; }
+    var SHUT = '她留下的话';
+    var OPEN = '收起她留下的话';
+    btn.addEventListener('click', function () {
+      var next = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', next ? 'true' : 'false');
+      label.textContent = next ? OPEN : SHUT;
+      box.classList.toggle('is-open', next);
+    });
+  })();
   /* ================= 私人档案入口 ================= */
   (function () {
     /* 这里只有密码的 SHA-256 哈希，明文不出现任何地方 */
