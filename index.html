@@ -103,6 +103,8 @@ nav a.is-active{color:#c8fa75}
 .marquee{overflow:hidden;border-bottom:1px solid #ffffff20;padding:16px 0;background:#0c110c;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .marquee-track{display:inline-flex;gap:44px;padding-right:44px;animation:slide 26s linear infinite;font-size:15px;letter-spacing:6px;color:#c8fa75;text-transform:uppercase}
 .marquee span{opacity:.28}
+/* 跑马灯离开视口就暂停：无限动画会一直占着合成器，手机长时间开着容易把标签页拖垮 */
+.marquee-track.is-idle{animation-play-state:paused}
 .marquee:hover .marquee-track{animation-play-state:paused}
 @keyframes slide{to{transform:translateX(-50%)}}
 
@@ -239,7 +241,10 @@ body.lb-open{overflow:hidden}
 /* ============ 人物志 ============ */
 .people-sec{padding:8px 0 96px}
 .person{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(26px,3vw,44px);align-items:start;border:1px solid #ffffff1f;border-radius:16px;padding:clamp(20px,2.4vw,30px);background:linear-gradient(160deg,#161c16,#121712)}
-.person-photo img{display:block;width:100%;height:auto;border-radius:12px;border:1px solid #ffffff1f;filter:saturate(.95)}
+/* 照片容器必须是定位基准，否则隐藏形态的图片层会脱离卡片跑到页面顶部。
+   aspect-ratio 用来锁定框体尺寸：退出正常的 <img> 后框也不会塌陷，圆角与比例始终不变。 */
+.person-photo{position:relative;aspect-ratio:3/4}
+.person-photo img{display:block;width:100%;height:100%;object-fit:cover;border-radius:12px;border:1px solid #ffffff1f;filter:saturate(.95)}
 .person-info{min-width:0}
 /* 卡片留一个最小高度：切换隐藏形态时不会因为文案变短而上下跳动 */
 #person-cao{min-height:560px}
@@ -274,7 +279,8 @@ body.lb-open{overflow:hidden}
 /* 照片槽位：隐藏形态的播放器被创建后，正常照片整体退出 */
 #cao-slot{position:absolute;inset:0;display:none;overflow:hidden;border-radius:12px}
 #person-cao.hidden-mode #cao-slot{display:block}
-#person-cao.hidden-mode .person-photo>img{display:none}
+/* 正常照片隐藏但仍然占位，保证框体尺寸、圆角、比例在切换前后完全一致 */
+#person-cao.hidden-mode .person-photo>img{visibility:hidden}
 .cao-stage-img{display:block;width:100%;height:100%;object-fit:cover;border-radius:12px;border:1px solid #ffffff1f}
 /* 从左向右揭开：新图先整块遮住，再逐步揭开 */
 .cao-reveal{position:absolute;inset:0;background:#121712;transform-origin:right center;transform:scaleX(1);z-index:2;pointer-events:none}
@@ -331,7 +337,58 @@ body.lb-open{overflow:hidden}
   .cf-btn{height:28px;min-width:30px;padding:0 9px}
 }
 
-/* ============ 响应式 ============ */
+/* ============ 私人档案入口（与正常网站完全隔离）============ */
+/* 未通过验证时：正常网站整体不参与布局，入口独占全屏 */
+html.locked,html.locked body{overflow:hidden}
+html.locked .shell,html.locked .skip,html.locked .progress,html.locked .lightbox{display:none}
+/* 入口固定全屏；验证通过后彻底隐藏，不再作为透明层或背景层存在 */
+.gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:6vw;background:#101410;opacity:1;transition:opacity .55s ease,visibility .55s;overflow-y:auto;overscroll-behavior:contain;height:100vh;height:100dvh}
+.gate::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(720px 520px at 50% 12%,#c8fa7517,transparent 62%),radial-gradient(560px 460px at 50% 100%,#3d6f5a1f,transparent 62%)}
+html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
+.gate.gate-done{opacity:0;visibility:hidden;pointer-events:none}
+.gate-card{position:relative;width:100%;max-width:430px;text-align:center}
+.gate-eyebrow{margin:0 0 26px;font-size:11px;letter-spacing:5px;color:#c8fa7580}
+.gate-title{margin:0;font-size:clamp(30px,4.6vw,44px);font-weight:600;letter-spacing:2px;color:#f4f5ef}
+.gate-title::after{content:"";display:block;width:48px;height:2px;background:#c8fa75;margin:20px auto 0}
+.gate-sub{margin:24px 0 34px;font-size:14.5px;line-height:1.95;color:#a4ad9f}
+.gate-form{margin:0}
+.gate-field{position:relative;display:flex;align-items:center;min-width:0}
+.gate-field input{width:100%;min-width:0;flex:1 1 auto;font:inherit;font-size:15px;letter-spacing:2px;color:#f4f5ef;background:#161c16;border:1px solid #ffffff2b;border-radius:30px;padding:15px 74px 15px 22px;transition:border-color .3s,background .3s,box-shadow .3s;text-align:center}
+.gate-field input::placeholder{color:#7d867a;letter-spacing:2px}
+.gate-field input:focus{outline:none;border-color:#c8fa75;background:#1a211a;box-shadow:0 0 0 3px #c8fa751f}
+.gate-eye{position:absolute;right:8px;font:inherit;font-size:11.5px;letter-spacing:1px;color:#8f998a;background:#ffffff0d;border:1px solid #ffffff1f;border-radius:20px;padding:7px 13px;cursor:pointer;transition:all .25s}
+.gate-eye:hover{color:#c8fa75;border-color:#c8fa7566;background:#c8fa7514}
+.gate-eye:focus-visible{outline:2px solid #c8fa75;outline-offset:2px}
+.gate-msg{margin:14px 0 0;min-height:20px;font-size:13.5px;letter-spacing:.5px}
+.gate-msg.is-err{color:#e08a80}
+.gate-msg.is-ok{color:#c8fa75}
+.gate-submit{margin-top:20px;width:100%;font:inherit;font-size:15px;letter-spacing:4px;color:#172012;background:#c8fa75;border:0;border-radius:30px;padding:16px 20px;cursor:pointer;transition:background .3s,transform .3s,box-shadow .3s}
+.gate-submit:hover:not(:disabled){background:#dcffa5;transform:translateY(-2px);box-shadow:0 14px 30px -12px #c8fa7599}
+.gate-submit:focus-visible{outline:2px solid #c8fa75;outline-offset:4px}
+.gate-submit:disabled{opacity:.6;cursor:default}
+.gate-foot{margin:44px 0 0;font-size:10px;letter-spacing:3px;color:#5d665a}
+@keyframes gateShake{0%,100%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(6px)}54%{transform:translateX(-4px)}72%{transform:translateX(3px)}88%{transform:translateX(-1px)}}
+.gate-field.is-shake{animation:gateShake .44s cubic-bezier(.36,.07,.19,.97)}
+.nav-exit{color:#7d867a}
+.nav-exit:hover{color:#e08a80}
+@media(max-width:760px){
+  .gate{padding:8vw 7vw}
+  .gate-card{max-width:100%}
+  .gate-sub{font-size:14px;margin:20px 0 28px}
+  .gate-foot{margin-top:34px;letter-spacing:2px}
+  .gate-title::after{margin-top:16px}
+  .gate-eye{padding:6px 10px;font-size:11px;right:6px}
+  .gate-field input{padding:14px 62px 14px 18px;letter-spacing:1px}
+}
+
+/* ============ 性能：降低长期开着页面的渲染开销 ============ */
+/* 视口外的区块跳过渲染与绘制，滚动到附近再正常渲染（不影响滚动动画与锚点） */
+.people-sec,.interests,.works,.timeline-sec,.contact{content-visibility:auto;contain-intrinsic-size:auto 900px}
+/* 手机屏幕小，去掉吸顶导航的毛玻璃：它可以省下大量滚动时的合成开销 */
+@media(max-width:900px){
+  header{backdrop-filter:none;-webkit-backdrop-filter:none;background:#101410f2}
+}
+
 /* ============ 响应式 ============ */
 @media(min-width:1500px){.hero{min-height:760px}}
 @media(max-width:1080px){
@@ -602,7 +659,7 @@ body.lb-open{overflow:hidden}
       <div class="section-label reveal"><b>03 / THE PEOPLE</b>人物志</div>
       <div>
         <h2 id="people-title" class="reveal d1">出现过的人，<em>都值得单独存档</em>。</h2>
-        <p class="reveal d2">这个页面不只记那一晚。以后一起做过事、聊过天的人，都会慢慢补上来 —— 现在已经存了两位。</p>
+        <p class="reveal d2">这个页面不只记那一晚。以后一起做过事、聊过天的人，都会慢慢补上来 —— 现在已经存了三位。</p>
       </div>
     </div>
 
@@ -709,6 +766,46 @@ body.lb-open{overflow:hidden}
 
         <!-- 隐藏形态的阶段档案同样由脚本创建 -->
         <div id="cao-hidden-slot"></div>
+      </div>
+    </article>
+
+    <article class="person reveal" id="person-gao">
+      <div class="person-photo">
+        <img id="gao-photo" src="photos/gao-jieyue.jpg" width="1000" height="1333" loading="lazy" decoding="async"
+             alt="高洁月披着长发看向镜头的近照">
+      </div>
+      <div class="person-info">
+        <header>
+          <h3>高洁月</h3>
+        </header>
+        <dl class="person-tags">
+          <dt class="sr">人物标签</dt>
+          <dd>小屋唯一女生</dd>
+          <dd>济宁话推广大使</dd>
+          <dd>老仁</dd>
+          <dd>三人组好哥们</dd>
+          <dd>美丽动人的大美女</dd>
+          <dd>《爱情公寓》重度爱好者</dd>
+        </dl>
+        <div class="person-notes">
+          <h4>人物小记</h4>
+          <div class="notes-body">
+            <p>高洁月，这个小屋里唯一的女生。</p>
+            <p>但"唯一的女生"这个身份，在我们三个这里似乎并没有给她带来什么特殊待遇。</p>
+            <p>因为相处久了以后，她在我们心里的定位已经非常明确 —— 好哥们。</p>
+            <p>她说着一嘴流利且极具辨识度的济宁话，其中最经典的开场白莫过于：</p>
+            <p>"歪日，老仁！"</p>
+            <p>"老仁"在她的方言里，大概就是拜把子兄弟、好兄弟的意思。所以很多时候人还没见到，声音先从屋里传过来，一句"老仁"，基本就算完成了当天的见面仪式。</p>
+            <p>当然，哥们归哥们，有一件事情还是要分清楚。</p>
+            <p>她很喜欢别人称呼她：</p>
+            <p>"美丽动人的大美女。"</p>
+            <p>最好一个字都不要少。</p>
+          </div>
+        </div>
+        <blockquote class="person-quote">
+          <p>"歪日，老仁！"</p>
+          <cite>她留下的一句话</cite>
+        </blockquote>
       </div>
     </article>
   </section>
@@ -941,6 +1038,20 @@ body.lb-open{overflow:hidden}
   window.addEventListener('resize', draw);
   draw();
 
+  /* 跑马灯离开视口就暂停，避免无限动画长期占用合成器 */
+  var track = document.querySelector('.marquee-track');
+  if (track && 'IntersectionObserver' in window) {
+    var mio = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { track.classList.toggle('is-idle', !e.isIntersecting); });
+    }, { threshold: 0 });
+    mio.observe(track.parentNode);
+  }
+  /* 页面切到后台时也停下来 */
+  document.addEventListener('visibilitychange', function () {
+    if (!track) { return; }
+    track.classList.toggle('is-idle', document.hidden);
+  });
+
   /* 海报随鼠标轻微倾斜 */
   var poster = document.getElementById('poster');
   var fine = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
@@ -1100,12 +1211,11 @@ body.lb-open{overflow:hidden}
 
     /* 创建隐藏形态的全部 DOM —— 只在点击标签时执行一次 */
     function caoBuild() {
-      /* 左侧：播放器 */
+      /* 左侧：图片与揭开的遮罩直接放在照片框内，不额外套一层容器，
+         这样图片的定位与尺寸完全由 #cao-slot 决定，不可能跑出人物卡 */
       caoSlot.innerHTML =
-        '<div class="cao-stage">' +
-          '<img class="cao-stage-img" alt="">' +
-          '<span class="cao-reveal" aria-hidden="true"></span>' +
-        '</div>';
+        '<img class="cao-stage-img" alt="" decoding="async">' +
+        '<span class="cao-reveal" aria-hidden="true"></span>';
       /* 右侧：阶段档案 + 低调控制条 */
       caoHiddenSlot.innerHTML =
         '<div class="cao-file" aria-live="polite">' +
@@ -1164,8 +1274,16 @@ body.lb-open{overflow:hidden}
         if (caoPlaying) { caoPause(); } else { caoResume(); }
       });
 
-      /* 预加载全部 10 张，保证揭开时不空白 */
-      CAO_IMG.forEach(function (src) { var im = new Image(); im.src = src; });
+      /* 逐张、错开预加载：一次性解码 10 张 1000×1333 会在手机上形成内存尖峰，
+         分批加载既保证揭开时不空白，也不会让标签页因为瞬间占用过高而崩掉 */
+      CAO_IMG.forEach(function (src, k) {
+        setTimeout(function () {
+          if (!caoOn) { return; }   /* 已经退出隐藏模式就不再预加载 */
+          var im = new Image();
+          im.decoding = 'async';
+          im.src = src;
+        }, k * 300);
+      });
     }
 
     /* 第 10 阶段才在名字下方浮现「最终形态」小字，退出时整个移除 */
@@ -1348,10 +1466,23 @@ body.lb-open{overflow:hidden}
       var root = document.documentElement;
       root.classList.remove('loaded');
       requestAnimationFrame(function () { setTimeout(function () { root.classList.add('loaded'); }, 60); });
+      /* 淡出结束后把入口整个从 DOM 移除：不再作为透明层/背景层存在，
+         也就不会参与层级、命中测试或影响任何页面布局 */
+      setTimeout(removeGate, 700);
+    }
+
+    var gateHome = gate.parentNode;   /* 退出时需要放回去 */
+    var gateAnchor = gate.nextSibling;
+    function removeGate() {
+      if (gate.parentNode) { gate.parentNode.removeChild(gate); }
+    }
+    function restoreGate() {
+      if (!gate.parentNode && gateHome) { gateHome.insertBefore(gate, gateAnchor); }
     }
 
     function lock() {
       try { window.localStorage.removeItem(KEY); } catch (e) {}
+      restoreGate();                    /* 之前可能已被移出 DOM */
       document.documentElement.classList.add('locked');
       document.documentElement.classList.remove('authed');
       gate.classList.remove('gate-done');
