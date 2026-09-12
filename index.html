@@ -275,6 +275,31 @@ body.lb-open{overflow:hidden}
 .person-alias .alias-k{color:#8f998a;margin-right:10px;letter-spacing:2px}
 .person+.person{margin-top:20px}
 
+/* ============ 神秘生物：一条信息都没有的档案 ============ */
+/* 没有照片、没有标签、没有小记，只留下一句话。
+   照片位仍然保持 3:4 框体，用「资料缺失」占位，卡片骨架和别的人物完全一致。
+   这里刻意不加任何常驻动画：页面已经跑着跑马灯，不再给长时渲染加负担。 */
+.person-photo.is-unknown{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  border:1px solid #ffffff1f;border-radius:12px;overflow:hidden;
+  background:
+    repeating-linear-gradient(0deg,#ffffff0a 0 1px,#0000 1px 5px),
+    radial-gradient(120% 85% at 50% 32%,#1c241c,#0d110d 72%)}
+.unknown-mark{font-size:clamp(74px,8.4vw,108px);font-weight:600;line-height:1;color:#c8fa75;opacity:.9;text-shadow:0 0 40px #c8fa7538}
+.unknown-cap{font-size:10px;letter-spacing:4px;color:#7c8678;text-align:center;line-height:1.9}
+.unknown-cap b{display:block;font-weight:400;letter-spacing:2.6px;color:#5c6659}
+/* 标签位：只留下被涂掉的色块，hover 不再点亮 */
+.person-tags dd.tag-redacted{display:flex;align-items:center}
+.person-tags dd.tag-redacted:hover{border-color:#ffffff26;background:none}
+.redact-bar{display:inline-block;height:1em;border-radius:3px;
+  background:repeating-linear-gradient(135deg,#ffffff30 0 5px,#ffffff12 5px 10px)}
+.redact-bar.w1{width:58px}
+.redact-bar.w2{width:82px}
+.redact-bar.w3{width:44px}
+.redact-bar.w4{width:70px}
+/* 小记位：说明信息缺失，语气比正文更暗 */
+.notes-body.is-unknown p{color:#7c8678}
+
 /* ============ 曹学艺：隐藏形态（内容按需挂载，不预渲染）============ */
 /* 照片槽位：隐藏形态的播放器被创建后，正常照片整体退出 */
 #cao-slot{position:absolute;inset:0;display:none;overflow:hidden;border-radius:12px}
@@ -659,7 +684,7 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
       <div class="section-label reveal"><b>03 / THE PEOPLE</b>人物志</div>
       <div>
         <h2 id="people-title" class="reveal d1">出现过的人，<em>都值得单独存档</em>。</h2>
-        <p class="reveal d2">这个页面不只记那一晚。以后一起做过事、聊过天的人，都会慢慢补上来 —— 现在已经存了四位。</p>
+        <p class="reveal d2">这个页面不只记那一晚。以后一起做过事、聊过天的人，都会慢慢补上来 —— 现在已经存了五位。</p>
       </div>
     </div>
 
@@ -856,6 +881,39 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
         <blockquote class="person-quote">
           <p>"吃不吃夜宵？"</p>
           <cite>他留下的一句话</cite>
+        </blockquote>
+      </div>
+    </article>
+
+    <article class="person reveal" id="person-mystery">
+      <div class="person-photo is-unknown" role="img" aria-label="影像资料缺失：这只生物没有留下任何照片">
+        <span class="unknown-mark" aria-hidden="true">?</span>
+        <span class="unknown-cap" aria-hidden="true">影像资料缺失<b>NO IMAGE ON FILE</b></span>
+      </div>
+      <div class="person-info">
+        <header>
+          <h3>神秘生物</h3>
+          <p class="person-alias"><span class="alias-k">身份</span>未知</p>
+        </header>
+        <dl class="person-tags">
+          <dt class="sr">人物标签</dt>
+          <dd class="tag-redacted"><span class="sr">标签未知</span><i class="redact-bar w2"></i></dd>
+          <dd class="tag-redacted"><span class="sr">标签未知</span><i class="redact-bar w1"></i></dd>
+          <dd class="tag-redacted"><span class="sr">标签未知</span><i class="redact-bar w4"></i></dd>
+          <dd class="tag-redacted"><span class="sr">标签未知</span><i class="redact-bar w3"></i></dd>
+          <dd class="tag-redacted"><span class="sr">标签未知</span><i class="redact-bar w2"></i></dd>
+        </dl>
+        <div class="person-notes">
+          <h4>人物小记</h4>
+          <div class="notes-body is-unknown">
+            <p>档案里关于它的每一个字段，目前都是空的。</p>
+            <p>姓名、性别、来历、物种 —— 全部未知。</p>
+            <p>收录的时候，唯一被记录下来的只有下面这一句。</p>
+          </div>
+        </div>
+        <blockquote class="person-quote">
+          <p>"我明天一定好好学！"</p>
+          <cite>它留下的一句话</cite>
         </blockquote>
       </div>
     </article>
