@@ -241,6 +241,9 @@ body.lb-open{overflow:hidden}
 .person{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(26px,3vw,44px);align-items:start;border:1px solid #ffffff1f;border-radius:16px;padding:clamp(20px,2.4vw,30px);background:linear-gradient(160deg,#161c16,#121712)}
 .person-photo img{display:block;width:100%;height:auto;border-radius:12px;border:1px solid #ffffff1f;filter:saturate(.95)}
 .person-info{min-width:0}
+/* 卡片留一个最小高度：切换隐藏形态时不会因为文案变短而上下跳动 */
+#person-cao{min-height:560px}
+@media(min-width:1081px){#person-cao{min-height:940px}}
 /* 注意：页面顶部的全局 header 规则带 display:flex / position:sticky，这里要显式覆盖 */
 .person-info header{display:block;position:static;height:auto;padding-bottom:18px;border-bottom:1px solid #ffffff1f}
 .person-info h3{margin:0;font-size:clamp(24px,2.6vw,32px);font-weight:600;letter-spacing:-.6px}
@@ -267,23 +270,27 @@ body.lb-open{overflow:hidden}
 .person-alias .alias-k{color:#8f998a;margin-right:10px;letter-spacing:2px}
 .person+.person{margin-top:20px}
 
-/* ============ 曹学艺：隐藏形态（原地切换，与陈明远同一套机制）============ */
-/* 照片区：正常照片与 10 阶段播放器叠放在同一位置，尺寸不变 */
-.person-photo{position:relative}
-.cao-stage{position:absolute;inset:0;display:none;overflow:hidden;border-radius:12px}
-.cao-stage img{display:block;width:100%;height:100%;object-fit:cover;border-radius:12px;border:1px solid #ffffff1f}
-/* 从左向右揭开的遮罩 */
+/* ============ 曹学艺：隐藏形态（内容按需挂载，不预渲染）============ */
+/* 照片槽位：隐藏形态的播放器被创建后，正常照片整体退出 */
+#cao-slot{position:absolute;inset:0;display:none;overflow:hidden;border-radius:12px}
+#person-cao.hidden-mode #cao-slot{display:block}
+#person-cao.hidden-mode .person-photo>img{display:none}
+.cao-stage-img{display:block;width:100%;height:100%;object-fit:cover;border-radius:12px;border:1px solid #ffffff1f}
+/* 从左向右揭开：新图先整块遮住，再逐步揭开 */
 .cao-reveal{position:absolute;inset:0;background:#121712;transform-origin:right center;transform:scaleX(1);z-index:2;pointer-events:none}
-#person-cao.hidden-mode .cao-stage{display:block}
-#person-cao.hidden-mode .person-photo>img{visibility:hidden}
-#person-cao.hidden-mode .cao-reveal{animation:caoReveal 1000ms cubic-bezier(.22,.75,.2,1) both}
+.cao-reveal.is-open{animation:caoReveal 1000ms cubic-bezier(.22,.75,.2,1) both}
 @keyframes caoReveal{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-/* 右侧：正常小记与阶段档案叠放，切换时高度取两者较大值，卡片不跳 */
-.dup{display:grid}
-.dup-set{grid-area:1/1;opacity:1;transition:opacity .28s ease}
-.dup-set.is-off{opacity:0;pointer-events:none;visibility:hidden}
-/* 阶段档案 */
+/* 右侧：正常小记在隐藏模式下被移出 DOM，阶段档案按需创建 */
+#cao-hidden-slot{min-width:0}
 .cao-file{min-width:0}
+.cao-file.is-reading>*{animation:cfIn 600ms cubic-bezier(.22,.75,.2,1) both}
+@keyframes cfIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.cao-file.is-reading>*:nth-child(1){animation-delay:220ms}
+.cao-file.is-reading>*:nth-child(2){animation-delay:310ms}
+.cao-file.is-reading>*:nth-child(3){animation-delay:400ms}
+.cao-file.is-reading>*:nth-child(4){animation-delay:490ms}
+.cao-file.is-reading>*:nth-child(5){animation-delay:590ms}
+.cao-file.is-reading>*:nth-child(6){animation-delay:700ms}
 .cf-no{margin:0 0 10px;font-size:12px;letter-spacing:3px;color:#c8fa75;font-variant-numeric:tabular-nums}
 .cf-no .cf-no-k{margin-right:8px}
 .cf-title{margin:0 0 12px;font-size:clamp(19px,2vw,25px);font-weight:600;letter-spacing:-.4px;color:#e8ede3;line-height:1.4}
@@ -297,19 +304,9 @@ body.lb-open{overflow:hidden}
 .cf-bar{flex:1;height:3px;border-radius:3px;background:#ffffff1f;overflow:hidden;max-width:280px}
 .cf-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c8fa75,#8ff0c4);border-radius:3px}
 .cf-pct{font-size:12px;color:#c8fa75;font-variant-numeric:tabular-nums;white-space:nowrap}
-.cf-verdict{margin:20px 0 0;font-size:13.5px;letter-spacing:1px;color:#dcffa5;border:1px dashed #c8fa7559;border-radius:10px;padding:11px 15px;background:#c8fa7510;visibility:hidden;opacity:0}
-.cf-verdict.is-shown{visibility:visible;opacity:1;transition:opacity .5s}
-/* 文案分层浮现：编号 → 标题 → 状态 → 正文 → 进度 */
-.cao-file>*{opacity:1}
-#person-cao.hidden-mode .cao-file.is-reading>*{animation:cfIn 620ms cubic-bezier(.22,.75,.2,1) both}
-@keyframes cfIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(1){animation-delay:200ms}
-#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(2){animation-delay:290ms}
-#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(3){animation-delay:380ms}
-#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(4){animation-delay:470ms}
-#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(5){animation-delay:580ms}
-#person-cao.hidden-mode .cao-file.is-reading>*:nth-child(6){animation-delay:700ms}
-/* 低调的控制条 */
+.cf-verdict{margin:20px 0 0;font-size:13.5px;letter-spacing:1px;color:#dcffa5;border:1px dashed #c8fa7559;border-radius:10px;padding:11px 15px;background:#c8fa7510;opacity:0}
+.cf-verdict.is-shown{opacity:1;transition:opacity .5s}
+/* 低调控制条 */
 .cao-ctrl{display:flex;align-items:center;gap:9px;margin-top:20px;flex-wrap:wrap}
 .cf-btn{font:inherit;font-size:12px;line-height:1;color:#8f998a;background:#ffffff0a;border:1px solid #ffffff24;border-radius:20px;min-width:32px;height:30px;padding:0 11px;cursor:pointer;transition:color .25s,border-color .25s,background .25s}
 .cf-btn:hover:not(:disabled){color:#dcffa5;border-color:#c8fa7599;background:#c8fa751a}
@@ -321,9 +318,9 @@ body.lb-open{overflow:hidden}
 .cf-dot:hover{border-color:#c8fa75;background:#c8fa7540}
 .cf-dot[aria-current="true"]{background:#c8fa75;border-color:#c8fa75;box-shadow:0 0 8px -1px #c8fa75cc}
 .cf-dot:focus-visible{outline:2px solid #c8fa75;outline-offset:2px}
-/* 名字不变，只在第 10 阶段慢慢浮现最终形态 */
-.cao-final-form{margin:0;font-size:12px;letter-spacing:2px;color:#c8fa75;max-height:0;opacity:0;overflow:hidden;transition:opacity .5s,margin-top .5s,max-height .5s}
-.cao-final-form.is-shown{margin-top:8px;max-height:24px;opacity:1}
+/* 名字不变，只在第 10 阶段慢慢浮现最终形态（同样按需创建） */
+.cao-final-form{margin:8px 0 0;font-size:12px;letter-spacing:2px;color:#c8fa75;opacity:0}
+.cao-final-form.is-shown{opacity:1;transition:opacity .5s}
 @media(max-width:760px){
   .cf-title{font-size:20px}
   .cf-desc{font-size:15px;line-height:1.95}
@@ -653,14 +650,7 @@ body.lb-open{overflow:hidden}
           </div>
         </div>
         <blockquote class="person-quote">
-          <div class="quote-body" id="chen-quote">
-            <div class="notes-set is-on" data-set="normal">
-              <p>爱上哥你无需自卑🌹</p>
-            </div>
-            <div class="notes-set" data-set="sweet">
-              <p>人家这么可爱，被喜欢也是没办法的事啦～🌹</p>
-            </div>
-          </div>
+          <p id="chen-quote-text">爱上哥你无需自卑🌹</p>
           <cite>他留下的一句话</cite>
         </blockquote>
       </div>
@@ -670,17 +660,13 @@ body.lb-open{overflow:hidden}
       <div class="person-photo">
         <img id="cao-photo" src="photos/cao-xueyi.jpg" width="1000" height="1333" loading="lazy" decoding="async"
              alt="曹学艺在教室里对着镜头比手势自拍，笑得很开心">
-        <!-- 隐藏形态：10 阶段播放器，原地替换上面的照片 -->
-        <div class="cao-stage" id="cao-stage" aria-hidden="true">
-          <img id="cao-stage-img" src="" alt="">
-          <span class="cao-reveal" aria-hidden="true"></span>
-        </div>
+        <!-- 隐藏形态的播放器不预渲染，点击标签时由脚本创建，见 #cao-slot -->
+        <div id="cao-slot"></div>
       </div>
       <div class="person-info">
         <header>
           <h3>曹学艺</h3>
           <p class="person-alias"><span class="alias-k">外号</span>小哈</p>
-          <p class="cao-final-form" aria-hidden="true">最终形态：沪上贵气型婶子</p>
         </header>
         <dl class="person-tags">
           <dt class="sr">人物标签</dt>
@@ -697,53 +683,32 @@ body.lb-open{overflow:hidden}
           </dd>
         </dl>
 
-        <div class="dup" id="cao-notes">
-          <div class="dup-set is-on" data-set="normal">
-            <div class="person-notes">
-              <h4>人物小记</h4>
-              <div class="notes-body">
-                <p>小哈是这个小屋里最不能缺席的人之一。</p>
-                <p>他在的时候，屋子里总是有声音的。聊天、开玩笑、接话、折腾点什么，哪怕什么正事都没干，也会让人觉得这里确实住着一群活生生的人。</p>
-                <p>他谈过十段恋爱。</p>
-                <p>按理说，经历到这个数量，人多少该变得世故一点了。</p>
-                <p>但小哈没有。</p>
-                <p>他依旧保留着一种很难得的单纯，很多时候你甚至会怀疑，这十段恋爱到底有没有真正改变过他。</p>
-                <p>这个家不能没有小哈。</p>
-                <p>因为他一回家，屋子就会突然安静很多。</p>
-                <p>不是那种普通的安静，而是会明显少一点"有人在这里生活"的感觉。</p>
-                <p>所以某种意义上，小哈不只是一个室友。</p>
-                <p>他是这个小屋的活人味。</p>
-              </div>
-            </div>
-            <blockquote class="person-quote">
-              <p>"十段恋爱过去了，人还是那个小哈。"</p>
-              <cite>他留下的一句话</cite>
-            </blockquote>
-          </div>
-
-          <!-- 隐藏形态：当前阶段档案 -->
-          <div class="dup-set" data-set="hidden">
-            <div class="cao-file" id="cao-file" aria-live="polite">
-              <p class="cf-no"><span class="cf-no-k">阶段</span> <span class="cf-cur">01</span></p>
-              <h5 class="cf-title"></h5>
-              <p class="cf-state"><span class="k">阶段状态</span> <span class="cf-state-v"></span></p>
-              <div class="cf-desc"></div>
-              <div class="cf-prog">
-                <span class="k">蜕变进度</span>
-                <span class="cf-bar" role="img" aria-label="蜕变进度"><i></i></span>
-                <span class="cf-pct">0%</span>
-              </div>
-              <p class="cf-verdict"></p>
-            </div>
-            <div class="cao-ctrl">
-              <button class="cf-btn cf-prev" type="button" aria-label="上一阶段">←</button>
-              <button class="cf-btn cf-play" type="button" aria-label="暂停播放">❙❙</button>
-              <button class="cf-btn cf-next" type="button" aria-label="下一阶段">→</button>
-              <span class="cf-count"><span class="cf-cur">01</span> / 10</span>
-              <span class="cf-dots" role="tablist" aria-label="跳到指定阶段"></span>
+        <!-- 正常人物小记：隐藏模式下会被整体移除，不是叠放隐藏 -->
+        <div id="cao-normal">
+          <div class="person-notes">
+            <h4>人物小记</h4>
+            <div class="notes-body">
+              <p>小哈是这个小屋里最不能缺席的人之一。</p>
+              <p>他在的时候，屋子里总是有声音的。聊天、开玩笑、接话、折腾点什么，哪怕什么正事都没干，也会让人觉得这里确实住着一群活生生的人。</p>
+              <p>他谈过十段恋爱。</p>
+              <p>按理说，经历到这个数量，人多少该变得世故一点了。</p>
+              <p>但小哈没有。</p>
+              <p>他依旧保留着一种很难得的单纯，很多时候你甚至会怀疑，这十段恋爱到底有没有真正改变过他。</p>
+              <p>这个家不能没有小哈。</p>
+              <p>因为他一回家，屋子就会突然安静很多。</p>
+              <p>不是那种普通的安静，而是会明显少一点"有人在这里生活"的感觉。</p>
+              <p>所以某种意义上，小哈不只是一个室友。</p>
+              <p>他是这个小屋的活人味。</p>
             </div>
           </div>
+          <blockquote class="person-quote">
+            <p>"十段恋爱过去了，人还是那个小哈。"</p>
+            <cite>他留下的一句话</cite>
+          </blockquote>
         </div>
+
+        <!-- 隐藏形态的阶段档案同样由脚本创建 -->
+        <div id="cao-hidden-slot"></div>
       </div>
     </article>
   </section>
@@ -1037,7 +1002,10 @@ body.lb-open{overflow:hidden}
     var PHOTO = { normal: 'photos/chen-mingyuan.jpg', sweet: 'photos/chen-mingyuan-sweet.jpg' };
     var photoEl = document.getElementById('chen-photo');
     var photoBox = photoEl.parentNode;
-    var notes = document.querySelectorAll('#chen-notes .notes-set, #chen-quote .notes-set');
+    var notes = document.querySelectorAll('#chen-notes .notes-set');
+    /* 引言只有一句，切换时直接换文字，任何时候 DOM 里都只存在当前这一句 */
+    var quoteTextEl = document.getElementById('chen-quote-text');
+    var QUOTE = { normal: '爱上哥你无需自卑🌹', sweet: '人家这么可爱，被喜欢也是没办法的事啦～🌹' };
     var isSweetMode = false, swapTimer = null;
 
     /* 预加载女装照片，避免首次切换时出现空白 */
@@ -1056,6 +1024,7 @@ body.lb-open{overflow:hidden}
         set.classList.toggle('is-on', on);
         set.classList.toggle('is-off', !on);
       });
+      if (quoteTextEl) { quoteTextEl.textContent = isSweetMode ? QUOTE.sweet : QUOTE.normal; }
       sweetBtn.setAttribute('aria-pressed', isSweetMode ? 'true' : 'false');
       person.classList.toggle('sweet-mode', isSweetMode);
     }
@@ -1077,11 +1046,11 @@ body.lb-open{overflow:hidden}
     renderSweet();
   }
 
-  /* ================= 曹学艺：隐藏形态（原地切换，机制同陈明远） ================= */
+  /* ================= 曹学艺：隐藏形态（内容按需挂载，互不干扰） ================= */
   var caoCard = document.getElementById('person-cao');
   var caoToggle = document.getElementById('cao-toggle');
   if (caoCard && caoToggle) {
-    /* 10 个阶段，每个阶段一套独立文案 */
+    /* 10 个阶段，每阶段一套独立文案 */
     var CAO = [
       { t: '开始化妆', s: '尚未察觉危险', p: 5,
         d: '一切都从“随便化一下”开始。\n此时的小哈甚至还有一点配合。\n他大概以为，这只是今天众多玩笑中的一个。' },
@@ -1103,179 +1072,252 @@ body.lb-open{overflow:hidden}
         d: '到了这个阶段，已经没人再告诉他应该怎么站、怎么坐、怎么看镜头了。\n动作越来越自然，神情也越来越从容。\n原本属于恶搞的感觉正在一点一点消失。\n取而代之的，是一种令人意外的合理。' },
       { t: '沪上贵气', s: '最终形态', p: 100,
         d: '到这里，小哈已经完全不需要任何人的指导。\n坐姿从容，神情稳定。\n身上甚至隐约出现了一种刚逛完商场、下午准备约姐妹喝茶的气质。\n不是少女。\n也已经不只是简单的女装。\n更像一位见过世面、讲究体面、对生活有自己要求的高贵上海婶子。\n高贵，从容，而且莫名合理。\n一个男人的蜕变，至此完成。',
-        verdict: '最终判定：沪上贵气型婶子' }
+        verdict: '最终判定：沪上贵气型婶子', finalForm: '最终形态：沪上贵气型婶子' }
     ];
     var CAO_IMG = [
       'photos/sweet-01.jpg', 'photos/sweet-02.jpg', 'photos/sweet-03.jpg', 'photos/sweet-04.jpg', 'photos/sweet-05.jpg',
       'photos/sweet-06.jpg', 'photos/sweet-07.jpg', 'photos/sweet-08.jpg', 'photos/sweet-09.jpg', 'photos/sweet-10.jpg'
     ];
-    var CAO_STAY = 4800;   /* 每阶段停留（动画结束后再计时） */
-    var CAO_READ = 1300;   /* 进入动画大致完成的时长 */
+    var CAO_HOLD = 4500;    /* 每阶段停留（入场动画完成后再计时） */
+    var CAO_INTRO = 1250;   /* 入场动画大致完成所需时间 */
 
-    var caoStage = document.getElementById('cao-stage');
-    var caoStageImg = document.getElementById('cao-stage-img');
-    var caoReveal = caoStage.querySelector('.cao-reveal');
-    var caoNotes = document.getElementById('cao-notes');
-    var caoFile = document.getElementById('cao-file');
-    var caoFinalForm = caoCard.querySelector('.cao-final-form');
-    var cfSets = caoNotes.querySelectorAll('.dup-set');
-    /* 阶段档案里的 .cf-cur 与控制条的 .cf-cur 是两处，渲染时一起更新 */
-    var cfTitle = caoFile.querySelector('.cf-title');
-    var cfState = caoFile.querySelector('.cf-state-v');
-    var cfDesc = caoFile.querySelector('.cf-desc');
-    var cfBarFill = caoFile.querySelector('.cf-bar i');
-    var cfBar = caoFile.querySelector('.cf-bar');
-    var cfPct = caoFile.querySelector('.cf-pct');
-    var cfVerdict = caoFile.querySelector('.cf-verdict');
-    var cfCountCur = caoNotes.querySelector('.cf-count .cf-cur');
-    var cfPrev = caoNotes.querySelector('.cf-prev');
-    var cfNext = caoNotes.querySelector('.cf-next');
-    var cfPlay = caoNotes.querySelector('.cf-play');
-    var cfDots = caoNotes.querySelector('.cf-dots');
+    var caoSlot = document.getElementById('cao-slot');
+    var caoNormal = document.getElementById('cao-normal');
+    var caoHiddenSlot = document.getElementById('cao-hidden-slot');
+    var caoHeader = caoCard.querySelector('.person-info header');
 
-    var caoIdx = 0, caoOn = false, caoPlaying = false, caoTimer = null, caoVerdictTimer = null, caoBusy = false;
+    /* ---- 运行时状态：两个隐藏模式彼此独立，各用各的变量 ---- */
+    var caoOn = false;        /* 小哈的隐藏模式 */
+    var caoIdx = 0;           /* 当前阶段 */
+    var caoPlaying = false;   /* 是否自动播放 */
+    var caoTimer = null;      /* 只在隐藏模式下存在的延时器 */
+    var caoVerdictTimer = null;
+    var caoPlayer = null;     /* 隐藏形态的 DOM，退出时整体销毁 */
+    var caoFile = null;
+    var caoSchedule = null;
 
     function caoPad(n) { return (n < 10 ? '0' : '') + n; }
 
-    /* 阶段圆点 */
-    CAO.forEach(function (st, i) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'cf-dot';
-      b.setAttribute('aria-label', '跳到阶段 ' + (i + 1) + '：' + st.t);
-      b.setAttribute('aria-current', 'false');
-      b.addEventListener('click', function () { caoGo(i, true); });
-      cfDots.appendChild(b);
-    });
+    /* 创建隐藏形态的全部 DOM —— 只在点击标签时执行一次 */
+    function caoBuild() {
+      /* 左侧：播放器 */
+      caoSlot.innerHTML =
+        '<div class="cao-stage">' +
+          '<img class="cao-stage-img" alt="">' +
+          '<span class="cao-reveal" aria-hidden="true"></span>' +
+        '</div>';
+      /* 右侧：阶段档案 + 低调控制条 */
+      caoHiddenSlot.innerHTML =
+        '<div class="cao-file" aria-live="polite">' +
+          '<p class="cf-no"><span class="cf-no-k">阶段</span> <span class="cf-cur">01</span></p>' +
+          '<h5 class="cf-title"></h5>' +
+          '<p class="cf-state"><span class="k">阶段状态</span> <span class="cf-state-v"></span></p>' +
+          '<div class="cf-desc"></div>' +
+          '<div class="cf-prog">' +
+            '<span class="k">蜕变进度</span>' +
+            '<span class="cf-bar" role="img" aria-label="蜕变进度"><i></i></span>' +
+            '<span class="cf-pct">0%</span>' +
+          '</div>' +
+          '<p class="cf-verdict"></p>' +
+        '</div>' +
+        '<div class="cao-ctrl">' +
+          '<button class="cf-btn cf-prev" type="button" aria-label="上一阶段">←</button>' +
+          '<button class="cf-btn cf-play" type="button" aria-label="暂停播放">❙❙</button>' +
+          '<button class="cf-btn cf-next" type="button" aria-label="下一阶段">→</button>' +
+          '<span class="cf-count"><span class="cf-cur">01</span> / ' + CAO.length + '</span>' +
+          '<span class="cf-dots" role="tablist" aria-label="跳到指定阶段"></span>' +
+        '</div>';
 
+      caoPlayer = {
+        img: caoSlot.querySelector('.cao-stage-img'),
+        reveal: caoSlot.querySelector('.cao-reveal'),
+        file: caoHiddenSlot.querySelector('.cao-file'),
+        title: caoHiddenSlot.querySelector('.cf-title'),
+        stateV: caoHiddenSlot.querySelector('.cf-state-v'),
+        desc: caoHiddenSlot.querySelector('.cf-desc'),
+        bar: caoHiddenSlot.querySelector('.cf-bar'),
+        barFill: caoHiddenSlot.querySelector('.cf-bar i'),
+        pct: caoHiddenSlot.querySelector('.cf-pct'),
+        verdict: caoHiddenSlot.querySelector('.cf-verdict'),
+        count: caoHiddenSlot.querySelector('.cf-count .cf-cur'),
+        prev: caoHiddenSlot.querySelector('.cf-prev'),
+        play: caoHiddenSlot.querySelector('.cf-play'),
+        next: caoHiddenSlot.querySelector('.cf-next'),
+        dots: caoHiddenSlot.querySelector('.cf-dots')
+      };
+      caoFile = caoPlayer.file;
+
+      /* 阶段圆点 */
+      CAO.forEach(function (st, i) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cf-dot';
+        b.setAttribute('aria-label', '跳到阶段 ' + (i + 1) + '：' + st.t);
+        b.setAttribute('aria-current', 'false');
+        b.addEventListener('click', function () { caoGo(i); });
+        caoPlayer.dots.appendChild(b);
+      });
+
+      caoPlayer.prev.addEventListener('click', function () { caoGo(caoIdx - 1); });
+      caoPlayer.next.addEventListener('click', function () { caoGo(caoIdx + 1); });
+      caoPlayer.play.addEventListener('click', function () {
+        if (caoPlaying) { caoPause(); } else { caoResume(); }
+      });
+
+      /* 预加载全部 10 张，保证揭开时不空白 */
+      CAO_IMG.forEach(function (src) { var im = new Image(); im.src = src; });
+    }
+
+    /* 第 10 阶段才在名字下方浮现「最终形态」小字，退出时整个移除 */
+    var caoFinalEl = null;
+    function caoSetFinalForm(show) {
+      if (show) {
+        if (!caoFinalEl) {
+          caoFinalEl = document.createElement('p');
+          caoFinalEl.className = 'cao-final-form';
+          caoFinalEl.textContent = CAO[CAO.length - 1].finalForm;
+          caoHeader.appendChild(caoFinalEl);
+          void caoFinalEl.offsetWidth;
+        }
+        caoFinalEl.classList.add('is-shown');
+      } else if (caoFinalEl) {
+        caoFinalEl.classList.remove('is-shown');
+        if (caoFinalEl.parentNode) { caoFinalEl.parentNode.removeChild(caoFinalEl); }
+        caoFinalEl = null;
+      }
+    }
+
+    /* 渲染第 i 阶段：文案来自 CAO[i]，不含任何其他阶段的内容 */
     function caoRender(i) {
-      var st = CAO[i];
-      caoStageImg.setAttribute('src', CAO_IMG[i]);
-      caoStageImg.setAttribute('alt', '阶段 ' + (i + 1) + '：' + st.t);
-      Array.prototype.forEach.call([caoFile.querySelector('.cf-cur'), cfCountCur], function (el) { el.textContent = caoPad(i + 1); });
-      cfTitle.textContent = st.t;
-      cfState.textContent = st.s;
-      cfDesc.innerHTML = st.d.split('\n').map(function (line) { return '<p>' + line + '</p>'; }).join('');
-      cfPct.textContent = st.p + '%';
-      cfBar.setAttribute('aria-label', '蜕变进度 ' + st.p + '%');
-      cfBarFill.style.animation = 'none';
-      cfBarFill.style.width = '0%';
-      void cfBarFill.offsetWidth;
-      cfBarFill.style.animation = 'none';
-      cfBarFill.style.transition = 'width ' + (CAO_READ - 200) + 'ms cubic-bezier(.22,.75,.2,1)';
-      cfBarFill.style.width = st.p + '%';
-      Array.prototype.forEach.call(cfDots.children, function (d, k) {
+      var st = CAO[i], P = caoPlayer;
+      P.img.setAttribute('src', CAO_IMG[i]);
+      P.img.setAttribute('alt', '阶段 ' + (i + 1) + '：' + st.t);
+      caoFile.querySelector('.cf-cur').textContent = caoPad(i + 1);
+      P.title.textContent = st.t;
+      P.stateV.textContent = st.s;
+      P.desc.innerHTML = st.d.split('\n').map(function (line) { return '<p>' + line + '</p>'; }).join('');
+      P.pct.textContent = st.p + '%';
+      P.bar.setAttribute('aria-label', '蜕变进度 ' + st.p + '%');
+      P.count.textContent = caoPad(i + 1);
+      P.barFill.style.transition = 'none';
+      P.barFill.style.width = '0%';
+      void P.barFill.offsetWidth;
+      P.barFill.style.transition = 'width ' + (CAO_INTRO - 300) + 'ms cubic-bezier(.22,.75,.2,1)';
+      P.barFill.style.width = st.p + '%';
+      Array.prototype.forEach.call(P.dots.children, function (d, k) {
         d.setAttribute('aria-current', k === i ? 'true' : 'false');
       });
-      cfPrev.disabled = (i === 0);
-      cfNext.disabled = (i === CAO.length - 1);
-      /* 最终判定：等 800ms 再浮现 */
-      cfVerdict.classList.remove('is-shown');
-      cfVerdict.textContent = '';
-      if (caoVerdictTimer) { clearTimeout(caoVerdictTimer); }
-      /* 名字下方的最终形态：只在第 10 阶段浮现 */
+      P.prev.disabled = (i === 0);
+      P.next.disabled = (i === CAO.length - 1);
+
       var last = (i === CAO.length - 1);
-      caoFinalForm.classList.toggle('is-shown', last);
-      caoFinalForm.setAttribute('aria-hidden', last ? 'false' : 'true');
+      caoSetFinalForm(last);
+      P.verdict.classList.remove('is-shown');
+      P.verdict.textContent = '';
+      if (caoVerdictTimer) { clearTimeout(caoVerdictTimer); caoVerdictTimer = null; }
       if (last && st.verdict) {
         caoVerdictTimer = setTimeout(function () {
-          cfVerdict.textContent = st.verdict;
-          cfVerdict.classList.add('is-shown');
+          P.verdict.textContent = st.verdict;
+          P.verdict.classList.add('is-shown');
         }, 800);
       }
     }
 
-    /* 切到第 i 阶段：图片从左向右揭开，文案随后分层浮现 */
-    function caoGo(i, fromUser) {
-      if (i < 0 || i >= CAO.length || i === caoIdx && caoOn) { if (i === caoIdx) { return; } }
+    /* 切换阶段：重放揭开动画 + 文案分层浮现；并重新排下一次自动播放 */
+    function caoGo(i) {
+      if (!caoOn || i < 0 || i >= CAO.length) { return; }
       caoIdx = i;
-      caoBusy = true;
-      /* 重放揭开的动画 */
-      caoReveal.style.animation = 'none';
-      void caoReveal.offsetWidth;
-      caoReveal.style.animation = '';
+      if (caoTimer) { clearTimeout(caoTimer); caoTimer = null; }
+      var P = caoPlayer;
+      /* 揭开动画重放 */
+      P.reveal.classList.remove('is-open');
+      void P.reveal.offsetWidth;
       caoFile.classList.remove('is-reading');
       void caoFile.offsetWidth;
       caoRender(i);
+      P.reveal.classList.add('is-open');
       caoFile.classList.add('is-reading');
-      if (caoTimer) { clearTimeout(caoTimer); caoTimer = null; }
-      caoBusy = false;
-      if (caoPlaying) { caoSchedule(); }
-      if (fromUser) { /* 用户手动操作后继续按原节奏播放 */ }
+      /* 入场动画跑完再开始计时（手动切换时同样重新计时，不会乱） */
+      if (caoPlaying) { caoQueue(); }
     }
 
-    /* 等动画基本完成后再开始计算停留时间 */
-    function caoSchedule() {
+    /* 用 setTimeout + 当前阶段推进，而不是长期 setInterval */
+    function caoQueue() {
       if (caoTimer) { clearTimeout(caoTimer); }
       caoTimer = setTimeout(function () {
-        if (!caoPlaying || !caoOn) { return; }
-        if (caoIdx >= CAO.length - 1) { caoStopPlay(); return; }  /* 停在最终形态，不循环 */
+        caoTimer = null;
+        if (!caoOn || !caoPlaying) { return; }
+        if (caoIdx >= CAO.length - 1) { caoPause(); return; }   /* 停在最终形态，不循环 */
         caoGo(caoIdx + 1);
-      }, CAO_READ + CAO_STAY);
+      }, CAO_INTRO + CAO_HOLD);
     }
 
-    function caoStartPlay() {
-      caoPlaying = true;
-      cfPlay.textContent = '❙❙';
-      cfPlay.setAttribute('aria-label', '暂停播放');
-      caoSchedule();
-    }
-    function caoStopPlay() {
+    function caoPause() {
       caoPlaying = false;
-      cfPlay.textContent = '▶';
-      cfPlay.setAttribute('aria-label', '继续播放');
       if (caoTimer) { clearTimeout(caoTimer); caoTimer = null; }
+      if (caoPlayer) { caoPlayer.play.textContent = '▶'; caoPlayer.play.setAttribute('aria-label', '继续播放'); }
+    }
+    function caoResume() {
+      if (!caoOn) { return; }
+      caoPlaying = true;
+      if (caoPlayer) { caoPlayer.play.textContent = '❙❙'; caoPlayer.play.setAttribute('aria-label', '暂停播放'); }
+      if (caoIdx >= CAO.length - 1) { return; }   /* 已在最后一阶段就不必再排队 */
+      caoQueue();
     }
 
     function caoEnter() {
+      if (caoOn) { return; }
       caoOn = true;
       caoCard.classList.add('hidden-mode');
-      caoStage.setAttribute('aria-hidden', 'false');
       caoToggle.setAttribute('aria-pressed', 'true');
-      Array.prototype.forEach.call(cfSets, function (set) {
-        var on = set.getAttribute('data-set') === 'hidden';
-        set.classList.toggle('is-on', on);
-        set.classList.toggle('is-off', !on);
-      });
-      caoIdx = -1;
-      caoGo(0);          /* 立即从第 1 张开始 */
-      caoStartPlay();    /* 无需再点开始播放 */
+      /* 正常小记整体退出 DOM */
+      caoNormal.style.display = 'none';
+      /* 隐藏内容此刻才创建 */
+      caoBuild();
+      caoIdx = 0;
+      caoRender(0);
+      /* 第一张立即显示并自动播放 */
+      caoPlayer.reveal.classList.add('is-open');
+      caoFile.classList.add('is-reading');
+      caoPlaying = true;
+      caoPlayer.play.textContent = '❙❙';
+      caoQueue();
+      /* 把控制条滚进视野，避免手机上点了没反应的感觉 */
+      try {
+        var r = caoCard.getBoundingClientRect();
+        if (r.top < 0 || r.top > window.innerHeight * 0.6) { caoCard.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+      } catch (e) {}
     }
 
     function caoExit() {
+      if (!caoOn) { return; }
       caoOn = false;
-      caoStopPlay();
+      caoPlaying = false;
+      if (caoTimer) { clearTimeout(caoTimer); caoTimer = null; }
       if (caoVerdictTimer) { clearTimeout(caoVerdictTimer); caoVerdictTimer = null; }
       caoCard.classList.remove('hidden-mode');
-      caoStage.setAttribute('aria-hidden', 'true');
       caoToggle.setAttribute('aria-pressed', 'false');
-      caoFinalForm.classList.remove('is-shown');
-      caoFinalForm.setAttribute('aria-hidden', 'true');
-      cfVerdict.classList.remove('is-shown');
-      cfVerdict.textContent = '';
-      Array.prototype.forEach.call(cfSets, function (set) {
-        var on = set.getAttribute('data-set') === 'normal';
-        set.classList.toggle('is-on', on);
-        set.classList.toggle('is-off', !on);
-      });
+      caoSetFinalForm(false);
+      /* 隐藏形态的 DOM 整体销毁，页面上不留任何痕迹 */
+      caoSlot.innerHTML = '';
+      caoHiddenSlot.innerHTML = '';
+      caoPlayer = null;
+      caoFile = null;
       caoIdx = 0;
+      caoNormal.style.display = '';
     }
 
     caoToggle.addEventListener('click', function () { if (caoOn) { caoExit(); } else { caoEnter(); } });
-    cfPrev.addEventListener('click', function () { caoGo(caoIdx - 1, true); });
-    cfNext.addEventListener('click', function () { caoGo(caoIdx + 1, true); });
-    cfPlay.addEventListener('click', function () { if (caoPlaying) { caoStopPlay(); } else { caoStartPlay(); } });
+    /* 键盘左右键只在隐藏模式下生效 */
     caoCard.addEventListener('keydown', function (ev) {
       if (!caoOn) { return; }
-      if (ev.key === 'ArrowLeft') { ev.preventDefault(); caoGo(caoIdx - 1, true); }
-      if (ev.key === 'ArrowRight') { ev.preventDefault(); caoGo(caoIdx + 1, true); }
+      if (ev.key === 'ArrowLeft') { ev.preventDefault(); caoGo(caoIdx - 1); }
+      if (ev.key === 'ArrowRight') { ev.preventDefault(); caoGo(caoIdx + 1); }
     });
-    /* 隐藏形态下预加载全部 10 张，保证揭开时不空白 */
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden && caoPlaying) { caoStopPlay(); }
+      if (document.hidden && caoPlaying) { caoPause(); }
     });
   }
-
   /* ================= 私人档案入口 ================= */
   (function () {
     /* 这里只有密码的 SHA-256 哈希，明文不出现任何地方 */
