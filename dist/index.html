@@ -239,6 +239,29 @@ body.lb-open{overflow:hidden}
 .jump{color:#c8fa75;border-bottom:1px solid #c8fa7566;transition:border-color .3s}
 .jump:hover{border-bottom-color:#c8fa75}
 
+/* 名字下方的隐藏形态提示：平时不占位，进入女装模式才淡入 */
+.person-unlock{margin:0;font-size:12px;letter-spacing:2px;color:#c8fa75;max-height:0;opacity:0;overflow:hidden;transform:translateY(-3px);transition:opacity .35s,margin-top .35s,max-height .35s,transform .35s}
+.sweet-mode .person-unlock{margin-top:8px;max-height:24px;opacity:1;transform:none}
+
+/* 特殊标签：可点击，但仍是标签的形态 */
+.tag-special{margin:0;padding:0;border:0}
+.tag-special button{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13px;color:#cdd5c8;background:#c8fa7510;border:1px dashed #c8fa7559;border-radius:20px;padding:7px 15px;cursor:pointer;transition:color .3s,background .3s,border-color .3s,box-shadow .3s,transform .3s}
+.tag-special .hash{color:#c8fa75;font-weight:600}
+.tag-special .hint{font-size:10.5px;letter-spacing:1px;color:#8f998a;border-left:1px solid #ffffff2b;padding-left:8px;transition:color .3s}
+.tag-special button:hover{color:#dcffa5;border-style:solid;border-color:#c8fa7599;background:#c8fa751c;transform:translateY(-2px)}
+.tag-special button:focus-visible{outline:2px solid #c8fa75;outline-offset:3px}
+.tag-special button[aria-pressed="true"]{color:#dcffa5;border-style:solid;border-color:#c8fa75;background:#c8fa7524;box-shadow:0 0 0 1px #c8fa7538,0 0 20px -4px #c8fa7599}
+.tag-special button[aria-pressed="true"] .hint{color:#c8fa75}
+
+/* 图片与文案切换：尺寸固定，只做淡入淡出，卡片不跳动 */
+.person-photo img{transition:opacity .28s ease}
+.person-photo.is-swapping img{opacity:.1}
+.notes-body{display:grid}
+.notes-set{grid-area:1/1;opacity:1;transition:opacity .3s ease}
+.notes-set.is-off{opacity:0;pointer-events:none}
+.notes-set p{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa}
+.notes-set p+p{margin-top:14px}
+
 /* ============ 响应式 ============ */
 @media(min-width:1500px){.hero{min-height:760px}}
 @media(max-width:1080px){
@@ -488,14 +511,15 @@ body.lb-open{overflow:hidden}
     </div>
 
     <!-- 想加人：把下面整个 article 复制一份，改文字和照片路径即可 -->
-    <article class="person reveal">
+    <article class="person reveal" id="person-chen">
       <div class="person-photo">
-        <img src="photos/chen-mingyuan.jpg" width="1000" height="1333" loading="lazy" decoding="async"
+        <img id="chen-photo" src="photos/chen-mingyuan.jpg" width="1000" height="1333" loading="lazy" decoding="async"
              alt="陈明远在夜色里坐在金色的牛形雕塑上笑着看向镜头">
       </div>
       <div class="person-info">
         <header>
           <h3>陈明远</h3>
+          <p class="person-unlock" aria-hidden="true">隐藏形态已解锁</p>
         </header>
         <dl class="person-tags">
           <dt class="sr">人物标签</dt>
@@ -504,12 +528,30 @@ body.lb-open{overflow:hidden}
           <dd>镜头感</dd>
           <dd>Pose 选手</dd>
           <dd>《爱情公寓》资深教授</dd>
+          <dd class="tag-special">
+            <button type="button" id="sweet-toggle" aria-pressed="false">
+              <span class="hash" aria-hidden="true">#</span>女装甜妹(半觉醒)
+              <span class="hint" aria-hidden="true">点击</span>
+            </button>
+          </dd>
         </dl>
         <div class="person-notes">
           <h4>人物小记</h4>
-          <p>一个很有风趣的人，表演欲和表现力都很强。平时聊天偶尔就会突然进入"演起来了"的状态，到了镜头前更是几乎不需要预热，Pose 说来就来。</p>
-          <p>而且该说不说，确实挺帅。</p>
-          <p>《爱情公寓》方面属于资深研究人员，台词、人物和桥段都很熟。那天晚上一路聊下来，他也是主要输出之一。</p>
+          <div class="notes-body" id="chen-notes">
+            <div class="notes-set is-on" data-set="normal">
+              <p>一个很有风趣的人，表演欲和表现力都很强。平时聊天偶尔就会突然进入"演起来了"的状态，到了镜头前更是几乎不需要预热，Pose 说来就来。</p>
+              <p>而且该说不说，确实挺帅。</p>
+              <p>《爱情公寓》方面属于资深研究人员，台词、人物和桥段都很熟。那天晚上一路聊下来，他也是主要输出之一。</p>
+            </div>
+            <div class="notes-set" data-set="sweet">
+              <p>有些天赋平时藏得很深，直到换了一套衣服才突然暴露出来。</p>
+              <p>陈明远进入这个形态之后，原本的表演天赋和镜头感似乎找到了新的方向。</p>
+              <p>该说不说，确实很甜。</p>
+              <p>从表情、姿态到镜头前的状态，都有一种意外的自然感。与其说是在"尝试女装"，不如说更像某个隐藏角色突然被解锁了。</p>
+              <p>目前觉醒程度：半觉醒。</p>
+              <p>至于完全觉醒之后会发生什么，暂时没人知道。</p>
+            </div>
+          </div>
         </div>
         <blockquote class="person-quote">
           <p>待定（等他回复）</p>
@@ -799,6 +841,53 @@ body.lb-open{overflow:hidden}
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape' && lb.classList.contains('is-open')) { closeLb(); }
     });
+  }
+
+  /* 人物志：女装甜妹（半觉醒）模式切换 —— 纯前端，不刷新、不跳转 */
+  var person = document.getElementById('person-chen');
+  var sweetBtn = document.getElementById('sweet-toggle');
+  if (person && sweetBtn) {
+    var PHOTO = { normal: 'photos/chen-mingyuan.jpg', sweet: 'photos/chen-mingyuan-sweet.jpg' };
+    var photoEl = document.getElementById('chen-photo');
+    var photoBox = photoEl.parentNode;
+    var notes = document.querySelectorAll('#chen-notes .notes-set');
+    var isSweetMode = false, swapTimer = null;
+
+    /* 预加载女装照片，避免首次切换时出现空白 */
+    var preload = new Image();
+    preload.src = PHOTO.sweet;
+
+    function renderSweet() {
+      var src = isSweetMode ? PHOTO.sweet : PHOTO.normal;
+      var alt = isSweetMode
+        ? '陈明远换装后的样子，风格和之前完全不同'
+        : '陈明远在夜色里坐在金色的牛形雕塑上笑着看向镜头';
+      if (photoEl.getAttribute('src') !== src) { photoEl.setAttribute('src', src); }
+      photoEl.setAttribute('alt', alt);
+      Array.prototype.forEach.call(notes, function (set) {
+        var on = (set.getAttribute('data-set') === 'sweet') === isSweetMode;
+        set.classList.toggle('is-on', on);
+        set.classList.toggle('is-off', !on);
+      });
+      sweetBtn.setAttribute('aria-pressed', isSweetMode ? 'true' : 'false');
+      person.classList.toggle('sweet-mode', isSweetMode);
+    }
+
+    /* 先淡出（140ms）→ 换内容 → 淡入，总时长约 300ms。
+       图片区域宽高由 width/height 属性固定，切换不会造成卡片跳动。 */
+    function toggleSweet() {
+      isSweetMode = !isSweetMode;
+      if (swapTimer) { clearTimeout(swapTimer); swapTimer = null; }
+      photoBox.classList.add('is-swapping');
+      swapTimer = setTimeout(function () {
+        renderSweet();
+        photoBox.classList.remove('is-swapping');
+        swapTimer = null;
+      }, 140);
+    }
+
+    sweetBtn.addEventListener('click', toggleSweet);
+    renderSweet();
   }
 })();
 </script>
