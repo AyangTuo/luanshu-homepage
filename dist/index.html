@@ -176,6 +176,32 @@ footer .up:hover{transform:translateY(-3px)}
 .work-grid .card:nth-child(5){transition-delay:.36s}
 .work-grid .card:nth-child(6){transition-delay:.45s}
 
+/* ============ 夏日夜晚的记忆 ============ */
+.photo-sec{padding:8px 0 96px}
+.photo-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.photo-grid figure{margin:0}
+.photo-grid button{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;overflow:hidden;border-radius:12px;position:relative}
+.photo-grid button::after{content:"点击放大";position:absolute;left:14px;bottom:14px;background:#101410e6;color:#c8fa75;font-size:12px;letter-spacing:1px;padding:8px 14px;border-radius:20px;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none}
+.photo-grid button:hover::after,.photo-grid button:focus-visible::after{opacity:1;transform:none}
+.photo-grid img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:12px;border:1px solid #ffffff1f;filter:saturate(.94);transition:transform .65s cubic-bezier(.2,.7,.2,1),filter .45s,border-color .45s}
+.photo-grid button:hover img{transform:scale(1.035);filter:none;border-color:#c8fa7566}
+.photo-grid button:focus-visible img{filter:none;border-color:#c8fa75}
+.photo-grid figcaption{margin-top:16px;display:grid;gap:7px}
+.photo-grid .idx{font-size:12px;letter-spacing:3px;color:#c8fa75}
+.photo-grid figcaption strong{font-size:17px;font-weight:600;color:#e8ede3;letter-spacing:-.2px}
+.photo-grid figcaption>span:last-child{font-size:14px;line-height:1.85;color:#a4ad9f;max-width:440px}
+.film-note{margin:52px 0 0;font-size:15px;line-height:1.9;color:#8f998a;border-left:2px solid #c8fa7540;padding-left:20px;max-width:640px}
+
+/* 灯箱 */
+.lightbox{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:#0b0e0bee;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:5vh 5vw;cursor:zoom-out}
+.lightbox.is-open{display:grid}
+.lightbox figure{margin:0;max-width:min(1180px,92vw);max-height:90vh;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:16px;cursor:default}
+.lightbox img{max-width:100%;max-height:76vh;width:auto;height:auto;margin:0 auto;display:block;border-radius:10px;border:1px solid #ffffff26}
+.lightbox figcaption{font-size:14px;line-height:1.8;color:#c9d1c4;text-align:center;max-width:720px;justify-self:center}
+.lightbox-close{position:absolute;top:20px;right:22px;width:44px;height:44px;border-radius:50%;border:1px solid #ffffff2e;background:#161b16;color:#e8ede3;font-size:20px;line-height:1;cursor:pointer;transition:all .3s}
+.lightbox-close:hover{border-color:#c8fa75;color:#c8fa75;background:#1d241c}
+body.lb-open{overflow:hidden}
+
 /* ============ 响应式 ============ */
 @media(min-width:1500px){.hero{min-height:760px}}
 @media(max-width:1080px){
@@ -211,6 +237,18 @@ footer .up:hover{transform:translateY(-3px)}
   .stats{grid-template-columns:1fr 1fr;gap:20px;margin-top:34px}
   .contact{padding:60px 0 70px}
   .links{grid-template-columns:1fr}
+  .photo-sec{padding:4px 0 58px}
+  .photo-grid{gap:12px}
+  .photo-grid button{border-radius:9px}
+  .photo-grid img{border-radius:9px}
+  .photo-grid figcaption{margin-top:12px;gap:5px}
+  .photo-grid figcaption strong{font-size:14.5px}
+  .photo-grid figcaption>span:last-child{font-size:12.5px;line-height:1.75}
+  .photo-grid .idx{font-size:11px;letter-spacing:2px}
+  .film-note{margin-top:34px;font-size:14px;padding-left:15px}
+  .lightbox{padding:3vh 5vw}
+  .lightbox img{max-height:70vh}
+  .lightbox-close{top:12px;right:12px;width:40px;height:40px}
   footer{font-size:12px;justify-content:flex-start}
 }
 @media(prefers-reduced-motion:reduce){
@@ -237,6 +275,7 @@ footer .up:hover{transform:translateY(-3px)}
   <a class="brand" href="#top" aria-label="栾树首页"><span class="mark" aria-hidden="true">L</span> LUANSHU</a>
   <nav aria-label="主导航">
     <a href="#about">关于我</a>
+    <a href="#photos">那个夏夜</a>
     <a href="#interests">兴趣</a>
     <a href="#works">在做的事</a>
     <a href="#timeline">时间线</a>
@@ -299,10 +338,49 @@ footer .up:hover{transform:translateY(-3px)}
     </div>
   </section>
 
+  <!-- ========== 夏日夜晚的记忆 ========== -->
+  <section class="photo-sec" id="photos" aria-labelledby="photos-title">
+    <div class="section-head">
+      <div class="section-label reveal"><b>02 / A NIGHT TO REMEMBER</b>那个夏天的夜晚</div>
+      <div>
+        <h2 id="photos-title" class="reveal d1">那年夏天没回家，<br>我们<em>四个</em>把夜晚走了一遍。</h2>
+        <p class="reveal d2">考研的那个暑假，我们四个人合租了一间房子，谁也没回家。有天晚上喝过酒，索性一起出门溜达，在楼下拍了这些照片。没什么特别的事发生，但那天晚上很开心，到现在还记得。</p>
+      </div>
+    </div>
+
+    <div class="photo-grid">
+      <figure class="reveal">
+        <button type="button" aria-label="放大查看：四人在夜色里的合影">
+          <img src="photos/night-out-1.jpg" width="1400" height="1050" loading="lazy" decoding="async"
+               alt="四个人在夜晚的小区里比着手势合影，背景是亮着灯的高楼">
+        </button>
+        <figcaption>
+          <span class="idx">01</span>
+          <strong>四个人，一个都没少</strong>
+          <span>那晚的手势现在看有点傻，但笑是真的。</span>
+        </figcaption>
+      </figure>
+
+      <figure class="reveal">
+        <button type="button" aria-label="放大查看：三人站在夜里的合影">
+          <img src="photos/night-out-2.jpg" width="1400" height="1867" loading="lazy" decoding="async"
+               alt="三个人站在夜晚的小区广场上合影，身后是亮着灯的高楼和树影">
+        </button>
+        <figcaption>
+          <span class="idx">02</span>
+          <strong>拍照的那个人没在画面里</strong>
+          <span>但他在我们中间 —— 这张就是他按的快门。</span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <p class="film-note reveal">那天聊了什么已经记不清了，只记得走回去的时候，谁都不想先上楼。</p>
+  </section>
+
   <!-- ========== 兴趣 ========== -->
   <section class="interests" id="interests" aria-labelledby="interests-title">
     <div class="section-head">
-      <div class="section-label reveal"><b>02 / INTERESTS</b>兴趣与日常</div>
+      <div class="section-label reveal"><b>03 / INTERESTS</b>兴趣与日常</div>
       <div>
         <h2 id="interests-title" class="reveal d1">让我愿意<em>多花一点时间</em>的事。</h2>
         <p class="reveal d2">下面这些标签，是我生活里反复出现的关键词。想到什么就补什么，慢慢会长满。</p>
@@ -319,13 +397,14 @@ footer .up:hover{transform:translateY(-3px)}
       <li class="reveal"><b>08</b>植物与窗口的光</li>
       <li class="reveal"><b>09</b>手冲咖啡</li>
       <li class="reveal"><b>10</b>一个人旅行</li>
+      <li class="reveal"><b>11</b>和朋友夜游</li>
     </ul>
   </section>
 
   <!-- ========== 在做的事 ========== -->
   <section class="works" id="works" aria-labelledby="works-title">
     <div class="section-head">
-      <div class="section-label reveal"><b>03 / WORKS</b>在做的事</div>
+      <div class="section-label reveal"><b>04 / WORKS</b>在做的事</div>
       <div>
         <h2 id="works-title" class="reveal d1">一些<em>正在生长</em>的作品。</h2>
         <p class="reveal d2">它们有的还很粗糙，但都是真实做出来的东西。点开看看，也欢迎给我建议。</p>
@@ -369,7 +448,7 @@ footer .up:hover{transform:translateY(-3px)}
   <!-- ========== 时间线 ========== -->
   <section class="timeline-sec" id="timeline" aria-labelledby="timeline-title">
     <div class="section-head">
-      <div class="section-label reveal"><b>04 / TIMELINE</b>这几年的脚步声</div>
+      <div class="section-label reveal"><b>05 / TIMELINE</b>这几年的脚步声</div>
       <div>
         <h2 id="timeline-title" class="reveal d1">一步一步，<em>慢慢生长</em>。</h2>
         <p class="reveal d2">不是什么了不起的大事，只是些值得记下的节点。</p>
@@ -431,6 +510,7 @@ footer .up:hover{transform:translateY(-3px)}
   <span>© <span class="foot-year">2026</span> 栾树 · LUANSHU</span>
   <nav class="foot-nav" aria-label="页脚导航">
     <a href="#about">关于我</a>
+    <a href="#photos">那个夏夜</a>
     <a href="#works">在做的事</a>
     <a href="#contact">联系</a>
   </nav>
@@ -438,7 +518,15 @@ footer .up:hover{transform:translateY(-3px)}
 </footer>
 </div>
 
-<noscript><style>.reveal{opacity:1;transform:none}.progress{display:none}</style></noscript>
+<noscript><style>.reveal{opacity:1;transform:none}.progress{display:none}.photo-grid button{cursor:default}</style></noscript>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="照片大图">
+  <button class="lightbox-close" id="lightbox-close" type="button" aria-label="关闭大图">✕</button>
+  <figure>
+    <img id="lightbox-img" src="" alt="">
+    <figcaption id="lightbox-caption"></figcaption>
+  </figure>
+</div>
 
 <script>
 (function () {
@@ -534,6 +622,46 @@ footer .up:hover{transform:translateY(-3px)}
       poster.style.transform = 'rotate(' + (3 + dx * 5) + 'deg) translate(' + (dx * 14) + 'px,' + (dy * 14) + 'px)';
     });
     host.addEventListener('mouseleave', function () { poster.style.transform = ''; });
+  }
+
+  /* 照片灯箱 */
+  var lb = document.getElementById('lightbox');
+  if (lb) {
+    var lbImg = document.getElementById('lightbox-img');
+    var lbCap = document.getElementById('lightbox-caption');
+    var lbClose = document.getElementById('lightbox-close');
+    var lastFocus = null;
+
+    function openLb(fig) {
+      var img = fig.querySelector('img');
+      var cap = fig.querySelector('figcaption');
+      if (!img) { return; }
+      lastFocus = document.activeElement;
+      lbImg.src = img.getAttribute('src');
+      lbImg.alt = img.getAttribute('alt') || '';
+      lbCap.textContent = cap ? cap.textContent.replace(/\s+/g, ' ').trim() : '';
+      lb.classList.add('is-open');
+      document.body.classList.add('lb-open');
+      lbClose.focus();
+    }
+    function closeLb() {
+      lb.classList.remove('is-open');
+      document.body.classList.remove('lb-open');
+      lbImg.removeAttribute('src');
+      if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('.photo-grid figure'), function (fig) {
+      var btn = fig.querySelector('button');
+      if (btn) { btn.addEventListener('click', function () { openLb(fig); }); }
+    });
+    lbClose.addEventListener('click', closeLb);
+    lb.addEventListener('click', function (ev) {
+      if (ev.target === lb || ev.target === lbImg) { closeLb(); }
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && lb.classList.contains('is-open')) { closeLb(); }
+    });
   }
 })();
 </script>
