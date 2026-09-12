@@ -340,7 +340,7 @@ body.lb-open{overflow:hidden}
 /* ============ 私人档案入口 ============ */
 html.locked,html.locked body{overflow:hidden}
 html.locked .shell,html.locked .skip,html.locked .progress,html.locked .lightbox{display:none}
-.gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:6vw;background:#101410;opacity:1;transition:opacity .55s ease,visibility .55s}
+.gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:6vw;background:#101410;opacity:1;transition:opacity .55s ease,visibility .55s;overflow-y:auto;overscroll-behavior:contain;height:100vh;height:100dvh}
 .gate::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(720px 520px at 50% 12%,#c8fa7517,transparent 62%),radial-gradient(560px 460px at 50% 100%,#3d6f5a1f,transparent 62%)}
 /* 已通过验证的回头访客：首次绘制前就把入口藏掉，不会闪 */
 html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
@@ -491,6 +491,7 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
       <label class="sr" for="gate-input">访问密码</label>
       <div class="gate-field">
         <input id="gate-input" type="password" inputmode="numeric" autocomplete="off"
+               autocapitalize="off" autocorrect="off" spellcheck="false"
                placeholder="输入访问密码" aria-describedby="gate-msg">
         <button class="gate-eye" id="gate-eye" type="button" aria-label="显示密码">显示</button>
       </div>
@@ -1346,13 +1347,70 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
       setTimeout(function () { try { input.focus(); } catch (e) {} }, 600);
     }
 
+    /* 纯 JS 的 SHA-256。
+       不用 crypto.subtle —— 它只在 HTTPS / localhost 下存在，
+       如果通过 http:// 打开（例如手机上存了旧链接），密码校验会直接失效。 */
     function sha256hex(str) {
-      var bytes = new TextEncoder().encode(str);
-      return crypto.subtle.digest('SHA-256', bytes).then(function (buf) {
-        return Array.prototype.map.call(new Uint8Array(buf), function (b) {
-          return b.toString(16).padStart(2, '0');
-        }).join('');
-      });
+      function rr(v, n) { return (v >>> n) | (v << (32 - n)); }
+      var K = [
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+      ];
+      var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+      /* UTF-8 编码 */
+      var bytes = [], i, c, cp;
+      for (i = 0; i < str.length; i++) {
+        cp = str.charCodeAt(i);
+        if (cp < 0x80) { bytes.push(cp); }
+        else if (cp < 0x800) { bytes.push(0xc0 | (cp >> 6), 0x80 | (cp & 63)); }
+        else if (cp >= 0xd800 && cp <= 0xdbff && i + 1 < str.length) {
+          var lo = str.charCodeAt(++i);
+          cp = 0x10000 + ((cp - 0xd800) << 10) + (lo - 0xdc00);
+          bytes.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+        } else { bytes.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63)); }
+      }
+      var bitLen = bytes.length * 8;
+      bytes.push(0x80);
+      while (bytes.length % 64 !== 56) { bytes.push(0); }
+      var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;
+      bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255);
+      bytes.push((lo >>> 24) & 255, (lo >>> 16) & 255, (lo >>> 8) & 255, lo & 255);
+
+      var w = new Array(64);
+      for (var off = 0; off < bytes.length; off += 64) {
+        var a, b, cc, d, e, f, g, h, s0, s1, ch, maj, t1, t2, j;
+        for (j = 0; j < 16; j++) {
+          w[j] = (bytes[off + j * 4] << 24) | (bytes[off + j * 4 + 1] << 16) | (bytes[off + j * 4 + 2] << 8) | bytes[off + j * 4 + 3];
+        }
+        for (j = 16; j < 64; j++) {
+          var x = w[j - 15], y = w[j - 2];
+          s0 = rr(x, 7) ^ rr(x, 18) ^ (x >>> 3);
+          s1 = rr(y, 17) ^ rr(y, 19) ^ (y >>> 10);
+          w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0;
+        }
+        a = H[0]; b = H[1]; cc = H[2]; d = H[3]; e = H[4]; f = H[5]; g = H[6]; h = H[7];
+        for (j = 0; j < 64; j++) {
+          s1 = rr(e, 6) ^ rr(e, 11) ^ rr(e, 25);
+          ch = (e & f) ^ (~e & g);
+          t1 = (h + s1 + ch + K[j] + w[j]) | 0;
+          s0 = rr(a, 2) ^ rr(a, 13) ^ rr(a, 22);
+          maj = (a & b) ^ (a & cc) ^ (b & cc);
+          t2 = (s0 + maj) | 0;
+          h = g; g = f; f = e; e = (d + t1) | 0;
+          d = cc; cc = b; b = a; a = (t1 + t2) | 0;
+        }
+        H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + cc) | 0; H[3] = (H[3] + d) | 0;
+        H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+      }
+      var out = '';
+      for (i = 0; i < 8; i++) { out += ('00000000' + (H[i] >>> 0).toString(16)).slice(-8); }
+      return out;
     }
 
     function shake() {
@@ -1375,30 +1433,28 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
       if (unlocked()) { return; }
       var v = input.value;
       if (!v) { fail(); return; }
-      if (!(window.crypto && crypto.subtle)) {
-        /* 极老浏览器兜底：不比对，直接提示 */
-        msg.textContent = '这个浏览器太旧了，换一个再试。';
+      submit.disabled = true;
+      var h;
+      try {
+        h = sha256hex(v);
+      } catch (e) {
+        submit.disabled = false;
+        msg.textContent = '校验出错了，刷新页面再试一次。';
         msg.className = 'gate-msg is-err';
         return;
       }
-      submit.disabled = true;
-      sha256hex(v).then(function (h) {
-        if (h === AUTH_HASH) {
-          /* 先给一个短暂的过渡，而不是生硬跳转 */
-          msg.textContent = '验证通过，正在打开档案……';
-          msg.className = 'gate-msg is-ok';
-          submit.textContent = '验证通过';
-          input.disabled = true;
-          setTimeout(unlock, 560);
-        } else {
-          input.value = '';
-          submit.disabled = false;
-          fail();
-        }
-      }).catch(function () {
+      if (h === AUTH_HASH) {
+        /* 先给一个短暂的过渡，而不是生硬跳转 */
+        msg.textContent = '验证通过，正在打开档案……';
+        msg.className = 'gate-msg is-ok';
+        submit.textContent = '验证通过';
+        input.disabled = true;
+        setTimeout(unlock, 560);
+      } else {
+        input.value = '';
         submit.disabled = false;
         fail();
-      });
+      }
     });
 
     /* 再次输入时自动清除错误提示 */
