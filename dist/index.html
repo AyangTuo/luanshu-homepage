@@ -218,6 +218,28 @@ footer .up:hover{transform:translateY(-3px)}
 .lightbox-close:hover{border-color:#c8fa75;color:#c8fa75;background:#1d241c}
 body.lb-open{overflow:hidden}
 
+/* ============ 人物志 ============ */
+.people-sec{padding:8px 0 96px}
+.person{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(26px,3vw,44px);align-items:start;border:1px solid #ffffff1f;border-radius:16px;padding:clamp(20px,2.4vw,30px);background:linear-gradient(160deg,#161c16,#121712)}
+.person-photo img{display:block;width:100%;height:auto;border-radius:12px;border:1px solid #ffffff1f;filter:saturate(.95)}
+.person-info{min-width:0}
+/* 注意：页面顶部的全局 header 规则带 display:flex / position:sticky，这里要显式覆盖 */
+.person-info header{display:block;position:static;height:auto;padding-bottom:18px;border-bottom:1px solid #ffffff1f}
+.person-info h3{margin:0;font-size:clamp(24px,2.6vw,32px);font-weight:600;letter-spacing:-.6px}
+.person-role{margin:8px 0 0;font-size:13px;letter-spacing:1.5px;color:#8f998a}
+.person-tags{list-style:none;display:flex;flex-wrap:wrap;gap:9px;margin:20px 0 0;padding:0}
+.person-tags dd{margin:0;font-size:13px;color:#c2c9bd;border:1px solid #ffffff26;border-radius:20px;padding:7px 15px;transition:all .3s}
+.person-tags dd:hover{border-color:#c8fa75;color:#c8fa75;background:#c8fa7514}
+.person-notes{margin-top:26px}
+.person-notes h4{margin:0 0 14px;font-size:12px;letter-spacing:3px;color:#c8fa75;font-weight:600}
+.person-notes p{margin:0;font-size:15.5px;line-height:2;color:#aeb6aa}
+.person-notes p+p{margin-top:14px}
+.person-quote{margin:26px 0 0;padding:22px 0 0;border-top:1px solid #ffffff1f;position:relative}
+.person-quote p{margin:0;font-size:clamp(17px,1.7vw,21px);line-height:1.75;color:#e8ede3;letter-spacing:-.2px}
+.person-quote cite{display:block;margin-top:12px;font-style:normal;font-size:12px;letter-spacing:2px;color:#8f998a}
+.jump{color:#c8fa75;border-bottom:1px solid #c8fa7566;transition:border-color .3s}
+.jump:hover{border-bottom-color:#c8fa75}
+
 /* ============ 响应式 ============ */
 @media(min-width:1500px){.hero{min-height:760px}}
 @media(max-width:1080px){
@@ -272,6 +294,15 @@ body.lb-open{overflow:hidden}
   .photo-pull cite{font-size:12px}
   .photo-notes{grid-column:1 / -1;grid-template-columns:1fr;margin-top:4px;padding-top:22px;gap:12px}
   .photo-notes li{font-size:13.5px}
+  .people-sec{padding:4px 0 58px}
+  .person{grid-template-columns:1fr;gap:22px;padding:20px}
+  .person-photo{max-width:280px}
+  .person-info h3{font-size:24px}
+  .person-tags{gap:8px;margin-top:16px}
+  .person-tags dd{font-size:12.5px;padding:6px 13px}
+  .person-notes{margin-top:22px}
+  .person-notes p{font-size:15px;line-height:1.95}
+  .person-quote{margin-top:22px;padding-top:18px}
   .lightbox{padding:3vh 5vw}
   .lightbox img{max-height:70vh}
   .lightbox-close{top:12px;right:12px;width:40px;height:40px}
@@ -302,6 +333,7 @@ body.lb-open{overflow:hidden}
   <nav aria-label="主导航">
     <a href="#about">关于我</a>
     <a href="#photos">那个夏夜</a>
+    <a href="#people">人物志</a>
     <a href="#interests">兴趣</a>
     <a href="#works">在做的事</a>
     <a href="#timeline">时间线</a>
@@ -430,6 +462,7 @@ body.lb-open{overflow:hidden}
         <p class="reveal d5">可后来很多事情都忘了，偏偏还记得 32 楼、顶楼、那部慢电梯、拖鞋、《爱情公寓》，还有几个人喝完酒以后，在小区里漫无目的地晃到半夜。</p>
         <p class="reveal d5">有些记忆大概就是这样。</p>
         <p class="reveal d5">当时觉得普通，后来却一直留着。</p>
+        <p class="reveal d5">顺便说一句，那晚的几位「主要输出」，我单独给他们建了档 —— 就在下面。<a class="jump" href="#people">去看看 ↓</a></p>
         <blockquote class="photo-pull reveal">
           <p>当时觉得普通，<br>后来却一直留着。</p>
           <cite>—— 2026 年 7 月 25 日的那个晚上</cite>
@@ -445,10 +478,53 @@ body.lb-open{overflow:hidden}
     </div>
   </section>
 
+  <!-- ========== 人物志 ========== -->
+  <section class="people-sec" id="people" aria-labelledby="people-title">
+    <div class="section-head">
+      <div class="section-label reveal"><b>03 / THE PEOPLE</b>人物志</div>
+      <div>
+        <h2 id="people-title" class="reveal d1">那晚在场的，<em>都值得单独存档</em>。</h2>
+        <p class="reveal d2">按出场顺序慢慢补，现在先存一位。</p>
+      </div>
+    </div>
+
+    <!-- 想加人：把下面整个 article 复制一份，改文字和照片路径即可 -->
+    <article class="person reveal">
+      <div class="person-photo">
+        <img src="photos/chen-mingyuan.jpg" width="1000" height="1333" loading="lazy" decoding="async"
+             alt="陈明远在夜色里坐在金色的牛形雕塑上笑着看向镜头">
+      </div>
+      <div class="person-info">
+        <header>
+          <h3>陈明远</h3>
+          <p class="person-role">那晚的主要输出之一</p>
+        </header>
+        <dl class="person-tags">
+          <dt class="sr">人物标签</dt>
+          <dd>风趣</dd>
+          <dd>表演天赋</dd>
+          <dd>镜头感</dd>
+          <dd>Pose 选手</dd>
+          <dd>《爱情公寓》资深教授</dd>
+        </dl>
+        <div class="person-notes">
+          <h4>人物小记</h4>
+          <p>一个很有风趣的人，表演欲和表现力都很强。平时聊天偶尔就会突然进入"演起来了"的状态，到了镜头前更是几乎不需要预热，Pose 说来就来。</p>
+          <p>而且该说不说，确实挺帅。</p>
+          <p>《爱情公寓》方面属于资深研究人员，台词、人物和桥段都很熟。那天晚上一路聊下来，他也是主要输出之一。</p>
+        </div>
+        <blockquote class="person-quote">
+          <p>待定（等他回复）</p>
+          <cite>他留下的一句话</cite>
+        </blockquote>
+      </div>
+    </article>
+  </section>
+
   <!-- ========== 兴趣 ========== -->
   <section class="interests" id="interests" aria-labelledby="interests-title">
     <div class="section-head">
-      <div class="section-label reveal"><b>03 / INTERESTS</b>兴趣与日常</div>
+      <div class="section-label reveal"><b>04 / INTERESTS</b>兴趣与日常</div>
       <div>
         <h2 id="interests-title" class="reveal d1">从这个页面里，<br>已经能看见的<em>几件小事</em>。</h2>
         <p class="reveal d2">先不急着写一长串爱好。做过、留下过痕迹的，才放在这里。</p>
@@ -467,7 +543,7 @@ body.lb-open{overflow:hidden}
   <!-- ========== 在做的事 ========== -->
   <section class="works" id="works" aria-labelledby="works-title">
     <div class="section-head">
-      <div class="section-label reveal"><b>04 / WORKS</b>在做的事</div>
+      <div class="section-label reveal"><b>05 / WORKS</b>在做的事</div>
       <div>
         <h2 id="works-title" class="reveal d1">这个网站，<br>就是目前最具体的<em>作品</em>。</h2>
         <p class="reveal d2">先把一件事做好。页面会继续改，内容也会随着生活慢慢增加。</p>
@@ -511,7 +587,7 @@ body.lb-open{overflow:hidden}
   <!-- ========== 时间线 ========== -->
   <section class="timeline-sec" id="timeline" aria-labelledby="timeline-title">
     <div class="section-head">
-      <div class="section-label reveal"><b>05 / TIMELINE</b>这个页面的来路</div>
+      <div class="section-label reveal"><b>06 / TIMELINE</b>这个页面的来路</div>
       <div>
         <h2 id="timeline-title" class="reveal d1">先记住发生过的，<br>再等下一件<em>值得记录的事</em>。</h2>
         <p class="reveal d2">这里只写能够确认的节点，空白的位置留给以后。</p>
@@ -573,6 +649,7 @@ body.lb-open{overflow:hidden}
   <nav class="foot-nav" aria-label="页脚导航">
     <a href="#about">关于我</a>
     <a href="#photos">那个夏夜</a>
+    <a href="#people">人物志</a>
     <a href="#works">在做的事</a>
     <a href="#contact">联系</a>
   </nav>
