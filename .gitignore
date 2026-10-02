@@ -5,3 +5,7 @@
 /photo/
 /IMG_*.JPG
 /IMG_*.jpg
+
+# 奶龙原始素材：只留在本地。发布用的副本在 photos/nailong/
+# （人格设定已按原样内嵌到 dist/_worker.js 的系统提示词里）
+/奶龙模块/

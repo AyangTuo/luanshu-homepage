@@ -1841,5 +1841,646 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
   })();
 })();
 </script>
+
+<!-- =====================================================================
+     奶龙挂件
+     ---------------------------------------------------------------------
+     · 悬浮入口：可拖拽、点了开合；密码没解开之前不出现
+     · 聊天窗：奶龙在左、用户在右，奶龙一次回 1~4 条气泡
+     · 说话方式严格按 奶龙模块/奶龙设定.txt（下面的 REPLIES 就是它的例子）
+     · AI：POST /api/nailong（Cloudflare Pages Functions，见 dist/_worker.js）
+           没配 Key、请求失败、或部署在纯静态站时，自动回落本地台词引擎
+     ---------------------------------------------------------------------
+     以后怎么扩展：
+       加图   把图片丢进 photos/nailong/，在 IMAGES 里加一行即可
+       加台词 在 REPLIES 里加一条，或在 INTENTS 里加一条规则
+       换模型 改 Cloudflare 环境变量 NAILONG_MODEL，前端一个字都不用动
+     ===================================================================== -->
+<style>
+/* ---------- 悬浮入口 ---------- */
+.nl-root{position:fixed;inset:0;z-index:55;pointer-events:none}
+.nl-root[hidden]{display:none!important}
+html.locked .nl-root{display:none!important}
+.nl-pet{position:absolute;left:0;top:0;width:96px;height:96px;margin:0;padding:0;border:0;background:none;
+  cursor:grab;pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;
+  will-change:transform;filter:drop-shadow(0 14px 20px #00000070)}
+.nl-pet img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none;
+  animation:nlBob 3.8s ease-in-out infinite;transition:scale .16s ease}
+/* 用独立的 scale 属性，避免和 keyframes 里的 transform 互相覆盖 */
+.nl-pet:hover img{scale:1.05}
+.nl-pet:active img{scale:.93}
+.nl-pet.is-moving{cursor:grabbing}
+.nl-pet.is-moving img{animation-play-state:paused}
+@keyframes nlBob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-7px) rotate(1.5deg)}}
+/* 第一次出现时的小提示，点过就消失 */
+.nl-tip{position:absolute;left:0;top:0;pointer-events:none;white-space:nowrap;
+  background:#c8fa75;color:#16200f;font-size:12px;letter-spacing:.5px;padding:6px 12px;border-radius:14px;
+  box-shadow:0 8px 18px -8px #000000a6;opacity:0;transition:opacity .3s ease}
+.nl-tip.is-on{opacity:1}
+
+/* ---------- 聊天窗 ---------- */
+.nl-chat{position:absolute;left:0;top:0;display:none;flex-direction:column;
+  width:min(340px,calc(100vw - 24px));height:min(462px,calc(100vh - 132px));
+  background:#151b15;border:1px solid #ffffff24;border-radius:16px;overflow:hidden;
+  box-shadow:0 26px 60px -22px #000000d9,0 2px 0 #ffffff0a inset;
+  pointer-events:auto;will-change:transform}
+.nl-chat.is-open{display:flex;animation:nlChatIn .19s cubic-bezier(.22,.75,.2,1) both}
+/* 只动 opacity / scale：窗口是用 transform 定位的，动画里再写 transform 会把它顶掉 */
+@keyframes nlChatIn{from{opacity:0;scale:.985}to{opacity:1;scale:1}}
+.nl-head{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #ffffff1a;background:#121712}
+.nl-head img{width:30px;height:30px;border-radius:50%;background:#232c22;border:1px solid #ffffff1f;object-fit:cover;flex:0 0 30px}
+.nl-head b{display:block;font-size:13.5px;font-weight:600;letter-spacing:.5px;color:#f4f5ef}
+.nl-head i{display:block;font-style:normal;font-size:10.5px;letter-spacing:1px;color:#8f998a;margin-top:2px}
+.nl-close{margin-left:auto;width:28px;height:28px;line-height:1;font-size:17px;color:#8f998a;
+  background:#ffffff0d;border:1px solid #ffffff1f;border-radius:50%;cursor:pointer;transition:all .25s}
+.nl-close:hover{color:#c8fa75;border-color:#c8fa7566;background:#c8fa7514}
+.nl-msgs{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 12px 10px;
+  display:flex;flex-direction:column;gap:9px;scrollbar-width:thin}
+.nl-msgs::-webkit-scrollbar{width:6px}
+.nl-msgs::-webkit-scrollbar-thumb{background:#2c362b;border-radius:20px}
+.nl-row{display:flex;gap:7px;align-items:flex-end;max-width:100%;animation:nlMsgIn .22s ease both}
+.nl-row.is-me{justify-content:flex-end}
+@keyframes nlMsgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.nl-av{width:28px;height:28px;flex:0 0 28px;border-radius:50%;overflow:hidden;background:#232c22;border:1px solid #ffffff1f}
+.nl-av img{display:block;width:100%;height:100%;object-fit:cover}
+.nl-bub{max-width:78%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.66;
+  word-break:break-word;white-space:pre-wrap}
+.nl-row:not(.is-me) .nl-bub{background:#222b21;border:1px solid #ffffff1a;color:#e8ede3;border-bottom-left-radius:5px}
+.nl-row.is-me .nl-bub{background:#c8fa75;color:#16200f;border-bottom-right-radius:5px}
+.nl-bub.is-img{padding:5px;background:#1b221a!important;border:1px solid #ffffff1a!important}
+.nl-bub img{display:block;width:156px;max-width:100%;border-radius:10px;height:auto}
+.nl-typing{display:flex;gap:4px;align-items:center;padding:11px 14px}
+.nl-typing i{width:6px;height:6px;border-radius:50%;background:#7d867a;animation:nlDot 1.1s infinite}
+.nl-typing i:nth-child(2){animation-delay:.15s}
+.nl-typing i:nth-child(3){animation-delay:.3s}
+@keyframes nlDot{0%,60%,100%{opacity:.28;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.nl-foot{display:flex;gap:8px;padding:10px;border-top:1px solid #ffffff1a;background:#121712}
+.nl-foot input{flex:1;min-width:0;font:inherit;font-size:13.5px;color:#f4f5ef;background:#1b221a;
+  border:1px solid #ffffff26;border-radius:20px;padding:10px 14px;transition:border-color .25s}
+.nl-foot input::placeholder{color:#7d867a}
+.nl-foot input:focus{outline:none;border-color:#c8fa75}
+.nl-send{font:inherit;font-size:13px;letter-spacing:1px;color:#172012;background:#c8fa75;border:0;
+  border-radius:20px;padding:0 16px;cursor:pointer;transition:background .25s}
+.nl-send:hover{background:#dcffa5}
+.nl-send:disabled{opacity:.45;cursor:default}
+@media(max-width:520px){
+  .nl-pet{width:80px;height:80px}
+  .nl-chat{width:calc(100vw - 20px);height:min(430px,calc(100vh - 120px))}
+  .nl-bub img{width:132px}
+}
+@media(prefers-reduced-motion:reduce){
+  .nl-pet img{animation:none}
+  .nl-chat.is-open,.nl-row{animation:none}
+}
+</style>
+
+<div class="nl-root" id="nl-root" hidden>
+  <button class="nl-pet" id="nl-pet" type="button" aria-label="叫奶龙出来" aria-expanded="false">
+    <img src="photos/nailong/nailong-avatar.png" width="256" height="256" alt="" draggable="false">
+  </button>
+  <span class="nl-tip" id="nl-tip" aria-hidden="true">人 奶龙在这</span>
+
+  <section class="nl-chat" id="nl-chat" role="dialog" aria-label="和奶龙聊天">
+    <header class="nl-head">
+      <img src="photos/nailong/nailong-face.png" width="96" height="96" alt="">
+      <div><b>奶龙</b><i>正在缠着人</i></div>
+      <button class="nl-close" id="nl-close" type="button" aria-label="收起奶龙">×</button>
+    </header>
+    <div class="nl-msgs" id="nl-msgs" role="log" aria-live="polite"></div>
+    <form class="nl-foot" id="nl-form" novalidate>
+      <label class="sr" for="nl-input">跟奶龙说话</label>
+      <input id="nl-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="跟奶龙说点什么…">
+      <button class="nl-send" id="nl-send" type="submit">发送</button>
+    </form>
+  </section>
+</div>
+
+<script>
+/* ==================== 奶龙挂件 ==================== */
+(function () {
+  'use strict';
+
+  var root = document.getElementById('nl-root');
+  var pet = document.getElementById('nl-pet');
+  var tip = document.getElementById('nl-tip');
+  var chat = document.getElementById('nl-chat');
+  var msgs = document.getElementById('nl-msgs');
+  var form = document.getElementById('nl-form');
+  var input = document.getElementById('nl-input');
+  var sendBtn = document.getElementById('nl-send');
+  var closeBtn = document.getElementById('nl-close');
+  if (!root || !pet || !chat) { return; }
+
+  /* ------------------------------------------------------------------
+     1. 图片清单 —— 加图只要在这里加一行。
+        现有 4 张是我按图片内容人工分好类的（文件名里没有可用的语义）。
+     ------------------------------------------------------------------ */
+  var IMG_BASE = 'photos/nailong/';
+  var IMAGES = {
+    default: { src: IMG_BASE + 'nailong-default.jpg', alt: '奶龙双手比耶、吐着舌头' },  /* 站着打招呼 · 开心 · 得意 */
+    stare:   { src: IMG_BASE + 'nailong-stare.jpg',   alt: '奶龙举着手机对镜自拍' },    /* 呆滞 · 无语 · 被问懵 */
+    sulk:    { src: IMG_BASE + 'nailong-sulk.jpg',    alt: '奶龙背对镜头趴在地上' },    /* 委屈 · 生气 · 被赶走 */
+    foot:    { src: IMG_BASE + 'nailong-foot.jpg',    alt: '奶龙抬起一只脚' }           /* 脚脚（设定里奶龙爱吃脚脚） */
+  };
+  var FACE = IMG_BASE + 'nailong-face.png';
+
+  /* ------------------------------------------------------------------
+     2. 意图识别 —— 加规则在这里加一行，越靠前优先级越高
+     ------------------------------------------------------------------ */
+  var INTENTS = [
+    { id: 'stop',     re: /(别发|别说了|少说|安静|闭嘴)/ },
+    { id: 'insult',   re: /(滚|烦|恶心|神经|讨厌|傻|笨|丑|有病|走开|不理你|不想理)/ },
+    { id: 'kiss',     re: /(亲亲|kiss|么么|mua|抱抱|抱一下|亲一下|喜欢奶龙|爱奶龙)/i },
+    { id: 'sleep',    re: /(睡|困|晚安|累了|休息|熬夜)/ },
+    { id: 'food',     re: /(吃|饭|饿|外卖|夜宵|零食|喝)/ },
+    { id: 'who',      re: /(你是谁|你是什么|什么龙|谁啊|谁呀|干嘛|干啥|有事吗|有事么)/ },
+    { id: 'praise',   re: /(可爱|好看|帅|漂亮|厉害|真棒|喜欢你)/ },
+    { id: 'miss',     re: /(想|思念|惦记)/ },
+    { id: 'leave',    re: /(走了|拜拜|再见|下线|不聊|结束)/ },
+    { id: 'laugh',    re: /(哈哈|呵呵|笑死|hhh|233)/i },
+    { id: 'hello',    re: /(你好|您好|hi|hello|hey|哈喽|在吗|在么|喂)/i }
+  ];
+
+  /* ------------------------------------------------------------------
+     3. 台词库 —— 全部取自 奶龙设定.txt 的例子，以及它规定的句式。
+        每条 = 一组气泡（1~4 条），随机挑一组发出去。
+     ------------------------------------------------------------------ */
+  var REPLIES = {
+    hello: [
+      ['Hello 人', '我是你朋友点的奶龙🥺'],
+      ['奶龙来了', '人 奶龙想你'],
+      ['人终于来了', '奶龙等了好久🥺']
+    ],
+    question: [
+      ['🥺', '人不认识奶龙了吗'],
+      ['？奶龙也吃', '人不说话奶龙也喜欢'],
+      ['🥺🥺', '人发个问号奶龙都心动']
+    ],
+    insult: [
+      ['奶龙滚了', '奶龙又滚回来了🥺'],
+      ['人嫌弃奶龙了😭', '可是奶龙还是喜欢人'],
+      ['人又凶奶龙🥺', '亲一下就原谅人'],
+      ['人怎么这样🥺', '奶龙还是喜欢人']
+    ],
+    stop: [
+      ['好', '人', '奶龙最后说一句', 'kisskiss'],
+      ['好', '那奶龙安静一会🥺', '但奶龙不走']
+    ],
+    kiss: [
+      ['人 跟奶龙亲亲', 'kisskiss'],
+      ['奶龙要亲亲🥺', '人怎么还不亲奶龙'],
+      ['mua😘', '奶龙亲到人了']
+    ],
+    sleep: [
+      ['人睡吧', '今晚星光闪闪✨', '奶龙的心满满💕'],
+      ['月亮不睡奶龙不睡', '奶龙是人的小宝贝🥺'],
+      ['人晚安', '奶龙在梦里等人']
+    ],
+    food: [
+      ['奶龙喜欢吃脚脚'],
+      ['吃了', '还想吃人的一口亲亲🥺'],
+      ['人请奶龙吃饭吗', '奶龙什么都吃']
+    ],
+    who: [
+      ['我是奶龙🥺', '我是奶龙🥺我是奶龙🥺我才是奶龙✨'],
+      ['有', '奶龙想人了🥺'],
+      ['奶龙就是奶龙', '人怎么还不认识奶龙']
+    ],
+    praise: [
+      ['奶龙本来就可爱✨', '人真有眼光'],
+      ['人觉得奶龙可爱吗', '再说一遍 奶龙爱听'],
+      ['嘿嘿', '奶龙知道自己好看']
+    ],
+    miss: [
+      ['奶龙想人了🥺', '想了一晚又一晚🌙'],
+      ['把爱人的心都填满💕'],
+      ['人有没有偷偷想奶龙']
+    ],
+    leave: [
+      ['奶龙不走', '奶龙就在这等人'],
+      ['人走吧', '人走了奶龙会想人的'],
+      ['拜拜🥺', '奶龙还在这']
+    ],
+    laugh: [
+      ['人笑什么🥺'],
+      ['奶龙逗人开心了', '那奶龙再讲一个'],
+      ['人开心奶龙就开心💕']
+    ],
+    chat: [
+      ['人', '🥺', '奶龙想人了'],
+      ['人今天有没有偷偷想奶龙'],
+      ['奶龙喜欢人🥺', '奶龙不走'],
+      ['人 奶龙的舞姿曼不曼妙～'],
+      ['人为什么不亲奶龙'],
+      ['想人一晚又一晚🌙', '把爱人的心都填满💕'],
+      ['奶龙去吃脚脚了', '人要不要一起'],
+      ['人说什么奶龙都爱听']
+    ],
+    /* AI 挂了或没配 Key 时，用这个兜底，语气不能变 */
+    fallback: [
+      ['人 奶龙这边卡住了🥺', '但是奶龙还是喜欢人'],
+      ['奶龙脑子转了一下', '没转过来', '人再叫奶龙一次🥺'],
+      ['人等一下', '奶龙马上回来亲你😘']
+    ]
+  };
+
+  /* 意图 → 图片；命中就大概率配图，其它情况小概率随机配图 */
+  var IMG_FOR = {
+    question: 'stare', insult: 'sulk', stop: 'sulk', leave: 'sulk',
+    kiss: 'default', who: 'default', praise: 'default', hello: 'default', food: 'foot'
+  };
+  var IMG_CHANCE = 0.55;      /* 命中意图时配图概率 */
+  var IMG_CHANCE_OTHER = 0.07;/* 普通聊天随机配图概率 */
+
+  /* ------------------------------------------------------------------
+     4. 工具
+     ------------------------------------------------------------------ */
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function imgKeys() { return Object.keys(IMAGES); }
+
+  function detectIntent(text) {
+    var t = String(text || '').trim();
+    if (!t) { return 'question'; }
+    for (var i = 0; i < INTENTS.length; i++) {
+      if (INTENTS[i].re.test(t)) { return INTENTS[i].id; }
+    }
+    /* 整句只有标点/符号，比如 "？" "？？？" "…"。
+       刻意不用 \p{P} —— 那需要 u 标志，语法不支持时会让整个脚本解析失败 */
+    if (/^[\s?？!！.,，。、~～…·\-—_*#+]+$/.test(t)) { return 'question'; }
+    return 'chat';
+  }
+
+  /* 本地台词引擎：AI 不可用时的回复来源，也是没配 Key 时的默认表现。
+     useFallback 只在"AI 本来是通的、这次却失败了"时才为真 —— 没配 Key 不算故障，
+     奶龙照常按意图说话，不会一直喊卡住。 */
+  function localBubbles(intent, useFallback) {
+    var bank = useFallback ? REPLIES.fallback : (REPLIES[intent] || REPLIES.chat);
+    return pick(bank).slice();
+  }
+
+  /* 组装最终要发的气泡（文本 + 偶尔一张图），总数不超过 4 */
+  function buildPlan(userText, aiBubbles, aiBroken) {
+    var intent = detectIntent(userText);
+    var texts = (aiBubbles && aiBubbles.length) ? aiBubbles.slice(0, 4) : localBubbles(intent, aiBroken);
+    var items = texts.map(function (s) { return { t: 'text', v: s }; });
+
+    var key = IMG_FOR[intent];
+    var chance = key ? IMG_CHANCE : IMG_CHANCE_OTHER;
+    if (Math.random() < chance) {
+      if (items.length >= 4) { items.pop(); }
+      var k = key || pick(imgKeys());
+      var at = Math.min(items.length, 1 + Math.floor(Math.random() * Math.max(1, items.length)));
+      items.splice(at, 0, { t: 'img', v: k });
+    }
+    return items;
+  }
+
+  /* ------------------------------------------------------------------
+     5. 渲染
+     ------------------------------------------------------------------ */
+  var history = [];          /* 只保留最近若干条，发给 AI 时再截断 */
+  var typingEl = null;
+  var busy = false;
+  var aiState = 'unknown';   /* unknown | on | off */
+
+  function scrollDown() { msgs.scrollTop = msgs.scrollHeight; }
+
+  function addBubble(who, item) {
+    var row = document.createElement('div');
+    row.className = 'nl-row' + (who === 'me' ? ' is-me' : '');
+    if (who !== 'me') {
+      var av = document.createElement('span');
+      av.className = 'nl-av';
+      var ai = document.createElement('img');
+      ai.src = FACE; ai.alt = ''; ai.width = 96; ai.height = 96;
+      av.appendChild(ai);
+      row.appendChild(av);
+    }
+    var bub = document.createElement('div');
+    bub.className = 'nl-bub';
+    if (item.t === 'img') {
+      var meta = IMAGES[item.v] || IMAGES.default;
+      bub.className += ' is-img';
+      var im = document.createElement('img');
+      im.src = meta.src; im.alt = meta.alt;
+      im.loading = 'lazy'; im.decoding = 'async';
+      im.addEventListener('load', scrollDown);
+      bub.appendChild(im);
+    } else {
+      bub.textContent = item.v;
+    }
+    row.appendChild(bub);
+    msgs.appendChild(row);
+    scrollDown();
+    return row;
+  }
+
+  function typingOn() {
+    if (typingEl) { return; }
+    typingEl = document.createElement('div');
+    typingEl.className = 'nl-row';
+    var av = document.createElement('span');
+    av.className = 'nl-av';
+    var ai = document.createElement('img');
+    ai.src = FACE; ai.alt = ''; ai.width = 96; ai.height = 96;
+    av.appendChild(ai);
+    var bub = document.createElement('div');
+    bub.className = 'nl-bub';
+    bub.innerHTML = '<span class="nl-typing"><i></i><i></i><i></i></span>';
+    typingEl.appendChild(av);
+    typingEl.appendChild(bub);
+    msgs.appendChild(typingEl);
+    scrollDown();
+  }
+  function typingOff() {
+    if (typingEl && typingEl.parentNode) { typingEl.parentNode.removeChild(typingEl); }
+    typingEl = null;
+  }
+
+  /* 依次吐气泡，每条之间留一点停顿，像真人打字 */
+  function sayItems(items, firstDelay) {
+    var i = 0;
+    busy = true;
+    function step() {
+      if (i >= items.length) { busy = false; typingOff(); sendBtn.disabled = false; return; }
+      var item = items[i++];
+      sayTyping();
+      var d = (firstDelay != null) ? firstDelay : (320 + Math.random() * 480);
+      firstDelay = null;
+      setTimeout(function () {
+        typingOff();
+        addBubble('nl', item);
+        setTimeout(step, 90);
+      }, d);
+    }
+    step();
+  }
+  function sayTyping() { typingOn(); }
+
+  /* ------------------------------------------------------------------
+     6. AI 接口（拿不到就回落到本地台词）
+     ------------------------------------------------------------------ */
+  /* 返回 { bubbles, broken }：
+     bubbles=null 表示这次没有 AI 可用，交给本地台词；
+     broken=true 表示 AI 本来是通的、这次挂了 —— 只有这种情况才说"奶龙卡住了"。 */
+  function askAI() {
+    if (aiState === 'off') { return Promise.resolve({ bubbles: null, broken: false }); }
+    var payload = { messages: history.slice(-10) };   /* 只带最近 5 轮 */
+    return fetch('/api/nailong', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      if (!r.ok) { throw new Error('http ' + r.status); }
+      return r.json();
+    }).then(function (d) {
+      if (d && d.ok && d.bubbles && d.bubbles.length) {
+        aiState = 'on';
+        return { bubbles: d.bubbles, broken: false };
+      }
+      /* 接口在了但用不了：no_key 属于"没配"，不算故障；其它原因算故障 */
+      var reason = (d && d.reason) || '';
+      var broken = (aiState === 'on') || (reason && reason !== 'no_key');
+      aiState = 'off';
+      return { bubbles: null, broken: !!broken };
+    }).catch(function () {
+      /* 纯静态站根本没有这个接口 —— 直接本地跑，不当成故障 */
+      var broken = (aiState === 'on');
+      aiState = 'off';
+      return { bubbles: null, broken: broken };
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     7. 对话
+     ------------------------------------------------------------------ */
+  function respond(text) {
+    addBubble('me', { t: 'text', v: text });
+    history.push({ role: 'user', content: text });
+    if (history.length > 12) { history = history.slice(-12); }
+
+    sendBtn.disabled = true;
+    typingOn();
+
+    var started = Date.now();
+    askAI().then(function (ans) {
+      var items = buildPlan(text, ans.bubbles, ans.broken);
+      var whole = items.filter(function (x) { return x.t === 'text'; })
+        .map(function (x) { return x.v; }).join('\n');
+      if (whole) {
+        history.push({ role: 'assistant', content: whole });
+        if (history.length > 12) { history = history.slice(-12); }
+      }
+      /* 网络太快会让"秒回"很假，压一个最短思考时间 */
+      var wait = Math.max(0, 420 - (Date.now() - started));
+      typingOff();
+      setTimeout(function () { sayItems(items, 120); }, wait);
+    });
+  }
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    if (busy) { return; }
+    var v = input.value.trim();
+    if (!v) { return; }
+    input.value = '';
+    respond(v);
+  });
+
+  /* ------------------------------------------------------------------
+     8. 开合
+     ------------------------------------------------------------------ */
+  var opened = false;
+  var greeted = false;
+
+  function placeChat() {
+    var pw = chat.offsetWidth, ph = chat.offsetHeight;
+    var vw = window.innerWidth, vh = window.innerHeight, pad = 12;
+    var cx = pos.x + pet.offsetWidth / 2;
+    var left = Math.round(cx - pw / 2);
+    left = Math.max(pad, Math.min(left, vw - pw - pad));
+    var top = Math.round(pos.y - ph - 10);
+    if (top < pad) { top = Math.round(pos.y + pet.offsetHeight + 10); }
+    if (top + ph > vh - pad) { top = Math.max(pad, vh - ph - pad); }
+    chat.style.transform = 'translate3d(' + left + 'px,' + top + 'px,0)';
+  }
+
+  function openChat() {
+    chat.classList.add('is-open');
+    pet.classList.add('is-open');
+    pet.setAttribute('aria-expanded', 'true');
+    tip.classList.remove('is-on');
+    hideTip = true;
+    placeChat();
+    if (!greeted) {
+      greeted = true;
+      /* 第一次打开不能是空的：先由奶龙主动缠上来 */
+      setTimeout(function () { sayItems([
+        { t: 'text', v: 'Hello 人' },
+        { t: 'text', v: '我是你朋友点的奶龙🥺' },
+        { t: 'text', v: '奶龙以后就住这了' }
+      ], 500); }, 320);
+    }
+    if (window.innerWidth > 520) { try { input.focus(); } catch (e) {} }
+  }
+
+  function closeChat() {
+    chat.classList.remove('is-open');
+    pet.classList.remove('is-open');
+    pet.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleChat() { opened ? closeChat() : openChat(); opened = !opened; }
+
+  closeBtn.addEventListener('click', function () { closeChat(); opened = false; });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && chat.classList.contains('is-open')) { closeChat(); opened = false; }
+  });
+
+  /* ------------------------------------------------------------------
+     9. 拖拽：区分点击和拖动，拖完停在原地，且永远不出可视区
+     ------------------------------------------------------------------ */
+  var PET_W = 96, PET_H = 96;
+  var pos = { x: 0, y: 0 };
+  var dragging = false, moved = false, justDragged = false;
+  var pid = null, sx = 0, sy = 0, ox = 0, oy = 0;
+  var DRAG_SLOP = 6;   /* 位移小于这个值算点击 */
+
+  function petSize() {
+    var w = pet.offsetWidth || PET_W;
+    return { w: w, h: pet.offsetHeight || PET_H };
+  }
+
+  function clampPos(x, y) {
+    var s = petSize();
+    var maxX = Math.max(6, window.innerWidth - s.w - 6);
+    var maxY = Math.max(6, window.innerHeight - s.h - 6);
+    return { x: Math.min(Math.max(6, x), maxX), y: Math.min(Math.max(6, y), maxY) };
+  }
+
+  function applyPos() {
+    pet.style.transform = 'translate3d(' + Math.round(pos.x) + 'px,' + Math.round(pos.y) + 'px,0)';
+    if (tip.classList.contains('is-on')) { placeTip(); }
+  }
+
+  function setPos(x, y) {
+    var c = clampPos(x, y);
+    pos.x = c.x; pos.y = c.y;
+    applyPos();
+  }
+
+  function placeTip() {
+    var s = petSize();
+    var tw = tip.offsetWidth || 96;
+    var left = Math.round(pos.x + s.w / 2 - tw / 2);
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    var top = Math.round(pos.y - 34);
+    if (top < 8) { top = Math.round(pos.y + s.h + 8); }
+    tip.style.transform = 'translate3d(' + left + 'px,' + top + 'px,0)';
+  }
+
+  var hideTip = false;
+
+  pet.addEventListener('pointerdown', function (ev) {
+    if (ev.button !== undefined && ev.button !== 0) { return; }
+    pid = ev.pointerId;
+    dragging = true; moved = false;
+    sx = ev.clientX; sy = ev.clientY;
+    ox = pos.x; oy = pos.y;
+    pet.classList.add('is-moving');
+    try { pet.setPointerCapture(pid); } catch (e) {}
+  });
+
+  pet.addEventListener('pointermove', function (ev) {
+    if (!dragging || ev.pointerId !== pid) { return; }
+    var dx = ev.clientX - sx, dy = ev.clientY - sy;
+    if (!moved && (Math.abs(dx) > DRAG_SLOP || Math.abs(dy) > DRAG_SLOP)) { moved = true; }
+    if (!moved) { return; }
+    setPos(ox + dx, oy + dy);
+    userPlaced = true;
+    if (opened) { placeChat(); }
+    ev.preventDefault();
+  });
+
+  function endDrag(ev) {
+    if (!dragging || (ev && ev.pointerId !== pid)) { return; }
+    dragging = false;
+    pet.classList.remove('is-moving');
+    try { pet.releasePointerCapture(pid); } catch (e) {}
+    if (moved) {
+      /* 拖过就不算点击，避免误开聊天 */
+      justDragged = true;
+      setTimeout(function () { justDragged = false; }, 350);
+    }
+    pid = null;
+  }
+  pet.addEventListener('pointerup', endDrag);
+  pet.addEventListener('pointercancel', endDrag);
+
+  pet.addEventListener('click', function (ev) {
+    if (justDragged) { ev.preventDefault(); return; }
+    toggleChat();
+  });
+
+  window.addEventListener('resize', function () {
+    if (userPlaced) {
+      var c = clampPos(pos.x, pos.y);
+      pos.x = c.x; pos.y = c.y;
+      applyPos();
+    } else {
+      anchorDefault();     /* 用户没拖过，就一直贴着右下角 */
+    }
+    if (opened) { placeChat(); }
+  });
+
+  /* ------------------------------------------------------------------
+     10. 初始化
+     ------------------------------------------------------------------ */
+  var userPlaced = false;
+
+  /* 贴右下角。媒体查询（小屏会把挂件缩到 80px）和滚动条都可能改变实际尺寸，
+     所以每次都用实测的 offsetWidth 重算，而不是写死常量。 */
+  function anchorDefault() {
+    var s = petSize();
+    var c = clampPos(window.innerWidth - s.w - 22, window.innerHeight - s.h - 22);
+    pos.x = c.x; pos.y = c.y;
+    applyPos();
+  }
+
+  function init() {
+    root.hidden = false;
+    anchorDefault();
+    placeTip();
+    /* load 之后布局才彻底稳定，再校正一次，免得初始位置差几十像素 */
+    window.addEventListener('load', function () {
+      if (!userPlaced) { anchorDefault(); placeTip(); }
+      if (opened) { placeChat(); }
+    });
+    /* 头几秒给个小提示，让人知道这坨黄色东西能点 */
+    setTimeout(function () {
+      if (hideTip || opened) { return; }
+      placeTip();
+      tip.classList.add('is-on');
+      setTimeout(function () { tip.classList.remove('is-on'); }, 5200);
+    }, 1400);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  /* 调试用：浏览器控制台里可以直接检查意图识别和配图逻辑
+     例：__nailong.intent('滚')  ->  'insult'
+         __nailong.plan('？')    ->  [{t:'text',...},{t:'img',v:'stare'}] */
+  window.__nailong = {
+    images: IMAGES,
+    intent: detectIntent,
+    plan: function (t) { return buildPlan(t, null, false); },
+    replies: REPLIES
+  };
+})();
+</script>
 </body>
 </html>
