@@ -1989,6 +1989,8 @@ html.locked .nl-root{display:none!important}
      ------------------------------------------------------------------ */
   var INTENTS = [
     { id: 'stop',     re: /(别发|别说了|少说|安静|闭嘴)/ },
+    /* 敷衍：整句只有"哦/嗯/好的/随便"这类才算，不吞掉"好看"这种正常词 */
+    { id: 'dismiss',  re: /^(?:哦|喔|噢|嗯|恩|好|好的|好吧|行|行吧|随便|知道了|是吗|这样啊|ok|okay)[。.!！?？~～\s]*$/i },
     { id: 'insult',   re: /(滚|烦|恶心|神经|讨厌|傻|笨|丑|有病|走开|不理你|不想理)/ },
     { id: 'kiss',     re: /(亲亲|kiss|么么|mua|抱抱|抱一下|亲一下|喜欢奶龙|爱奶龙)/i },
     { id: 'sleep',    re: /(睡|困|晚安|累了|休息|熬夜)/ },
@@ -2020,7 +2022,18 @@ html.locked .nl-root{display:none!important}
       ['奶龙滚了', '奶龙又滚回来了🥺'],
       ['人嫌弃奶龙了😭', '可是奶龙还是喜欢人'],
       ['人又凶奶龙🥺', '亲一下就原谅人'],
-      ['人怎么这样🥺', '奶龙还是喜欢人']
+      ['人怎么这样🥺', '奶龙还是喜欢人'],
+      ['啊？', '人刚才是不是在夸奶龙'],
+      ['有一点', '主要是见到人以后犯的😌'],
+      ['哦'],
+      ['人骂人的样子', '奶龙居然觉得有点好看']
+    ],
+    /* 敷衍：察觉对方在敷衍，轻微阴阳一下，不攻击 */
+    dismiss: [
+      ['哦？', '人现在已经开始敷衍奶龙了是吧🥺'],
+      ['哦', '人这声哦好冷'],
+      ['嗯', '人嗯得奶龙心都凉了🥺'],
+      ['人', '奶龙在很认真地跟人说话呢']
     ],
     stop: [
       ['好', '人', '奶龙最后说一句', 'kisskiss'],
@@ -2098,6 +2111,20 @@ html.locked .nl-root{display:none!important}
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
   function imgKeys() { return Object.keys(IMAGES); }
 
+  /* 最近说过的开场句。对应"不要每次都是同一句"——优先挑近期没出现过的组，
+     全都用过一轮才允许重复，保证连着聊也不会一直"奶龙想人了"。 */
+  var recentLines = [];
+  function pickFresh(bank) {
+    var fresh = [];
+    for (var i = 0; i < bank.length; i++) {
+      if (recentLines.indexOf(bank[i][0]) === -1) { fresh.push(bank[i]); }
+    }
+    var chosen = pick(fresh.length ? fresh : bank);
+    recentLines.push(chosen[0]);
+    while (recentLines.length > 8) { recentLines.shift(); }
+    return chosen.slice();
+  }
+
   function detectIntent(text) {
     var t = String(text || '').trim();
     if (!t) { return 'question'; }
@@ -2115,7 +2142,7 @@ html.locked .nl-root{display:none!important}
      奶龙照常按意图说话，不会一直喊卡住。 */
   function localBubbles(intent, useFallback) {
     var bank = useFallback ? REPLIES.fallback : (REPLIES[intent] || REPLIES.chat);
-    return pick(bank).slice();
+    return pickFresh(bank);
   }
 
   /* 组装最终要发的气泡（文本 + 偶尔一张图），总数不超过 4 */
