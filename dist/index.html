@@ -1841,7 +1841,7 @@ html.authed .gate{opacity:0;visibility:hidden;pointer-events:none}
   })();
 })();
 </script>
-
+
 <!-- =====================================================================
      奶龙聊天室挂件
      ---------------------------------------------------------------------
@@ -2328,9 +2328,15 @@ html.locked .nl-root{display:none!important}
       if (!j.ok) { elInput.value = v; return; }
       if (j.message && j.message.id > lastId) lastId = j.message.id;
       addMessage({ id: j.message.id, type: 'user', senderId: me.id, name: me.display_name, content: v, kind: 'text' });
-      /* 本地先显示"奶龙正在打字"，等服务端把回复写进库再由轮询替换 */
-      showTyping((agents[0] && agents[0].name) || '奶龙');
-      typingUntil = Date.now() + 14000;
+      /* 只有服务端确认"有人会接话"时才显示正在输入。
+         以前是无条件转 14 秒然后无声消失 —— 那才是"奶龙像是要回却不回"的真正来源。 */
+      if (j.expecting && j.expecting.length) {
+        showTyping(j.expecting[0]);
+        typingUntil = Date.now() + 20000;
+      } else {
+        clearTyping();
+        typingUntil = 0;
+      }
     }).catch(function () {
       elSend.disabled = false;
       elInput.value = v;

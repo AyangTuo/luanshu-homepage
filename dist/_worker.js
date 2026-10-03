@@ -669,6 +669,8 @@ const DEFAULT_MODEL = 'gpt-4o-mini';
 const MAX_USERS = 7;              /* 最多几个真人账号，到顶就关闭公开注册 */
 const MAX_AGENTS_PER_MESSAGE = 2; /* 一条用户消息最多触发几个智能体 */
 const CONTEXT_MESSAGES = 40;      /* 给智能体看最近多少条群聊消息 */
+const COOLDOWN_WINDOW = 12;       /* 防刷屏冷却只看最近这么多条（不是整个上下文） */
+const COOLDOWN_MAX_TURNS = 2;     /* 冷却窗口内开口超过这个轮数就先歇一歇（被叫到不受限） */
 const MEMORY_EVERY = 25;          /* 累积多少条新消息提炼一次长期记忆 */
 const MEMORY_KEEP = 12;           /* 每次给智能体带多少条长期记忆 */
 const SESSION_DAYS = 30;
@@ -819,6 +821,15 @@ function json(obj, status) {
 }
 
 function nowISO() { return new Date().toISOString(); }
+
+/* 结构化日志：Cloudflare 端用 `wrangler pages deployment tail` 能看到。
+   排查"奶龙不回复"这类问题时，这条链路每一步都要留痕。 */
+function log(step, data) {
+  try { console.log('[nl] ' + step + ' ' + JSON.stringify(data === undefined ? null : data)); } catch (e) {}
+}
+function logErr(step, e) {
+  console.error('[nl] ' + step + ' ERROR ' + String((e && e.stack) || e).slice(0, 500));
+}
 
 function toBubbles(text, limit) {
   const cap = limit || MAX_BUBBLES;
@@ -1014,26 +1025,32 @@ function decideResponders(userMessage, agents, recent) {
   const text = String(userMessage.content || '');
   const forced = [];
   const candidates = [];
+  const why = {};
+  const hail = /(你们|大家|都|一起|谁)/.test(text);
 
   for (const a of agents) {
     let hit = false;
+    let reason = 'no-trigger';
     /* 1) 直接点名 / @ */
-    if (text.includes(a.display_name) || text.includes('@' + a.display_name)) hit = true;
+    if (text.includes(a.display_name) || text.includes('@' + a.display_name)) { hit = true; reason = 'named'; }
     /* 2) 回复的是它说的话 */
     if (!hit && userMessage.reply_to_message_id) {
       const target = recent.find((m) => m.id === userMessage.reply_to_message_id);
-      if (target && target.sender_type === 'agent' && target.sender_id === a.id) hit = true;
+      if (target && target.sender_type === 'agent' && target.sender_id === a.id) { hit = true; reason = 'reply-to'; }
     }
     /* 3) 对全体喊话 */
-    if (!hit && /(你们|大家|都|一起|谁)/.test(text)) candidates.push(a);
+    if (!hit && hail) { candidates.push(a); reason = 'hail'; }
     else if (hit) forced.push(a);
+    why[a.agent_key] = reason;
   }
 
   /* 点名优先；全员喊话时按插嘴概率挑（回调必须带参数 a，否则 ReferenceError 会被吞掉） */
   let chosen = forced.slice();
+  let stage = forced.length ? 'forced' : '';
   if (!chosen.length && candidates.length) {
     const willing = candidates.filter((a) => Math.random() < Math.max(a0(a), 0.35));
     chosen = willing.length ? willing : [candidates[Math.floor(Math.random() * candidates.length)]];
+    stage = 'hail-pick';
   }
 
   /* 没人被点名：按各自概率随机插嘴（这就是"偶尔插一句"） */
@@ -1041,12 +1058,33 @@ function decideResponders(userMessage, agents, recent) {
     for (const a of agents) {
       if (Math.random() < (a.reply_probability || 0)) chosen.push(a);
     }
+    stage = 'random-interject';
   }
 
+  const beforeCool = chosen.map((a) => a.agent_key);
   /* 冷却：按「发言轮次」算 —— 连续的气泡属于同一轮，不能算成说了好几次。
-     最近 12 条里已经开口 2 轮以上就先歇一歇，避免刷屏；被点名的不受限制。 */
-  chosen = chosen.filter((a) => {
-    return speakingTurns(recent, a.id) < 2 || forced.some((f) => f.id === a.id);
+     窗口是最近 COOLDOWN_WINDOW 条（和注释一致，之前错用了整个 40 条上下文，
+     导致奶龙开口两轮后会静默很久）。
+     被「点名」或被「全体喊话」叫到的都属于"必须回复"，一律豁免冷却。
+     之前只豁免了 forced，hail 选中的会被误杀 —— 这就是"你们都在吗"没人应的原因。 */
+  const summoned = {};
+  for (const a of forced) summoned[a.id] = true;
+  if (stage === 'hail-pick') { for (const a of chosen) summoned[a.id] = true; }
+  const cooldownWindow = recent.slice(-COOLDOWN_WINDOW);
+  const turns = {};
+  for (const a of agents) turns[a.agent_key] = speakingTurns(cooldownWindow, a.id);
+  chosen = chosen.filter((a) => turns[a.agent_key] < COOLDOWN_MAX_TURNS || summoned[a.id]);
+
+  log('decideResponders', {
+    text: text.slice(0, 30),
+    hail: hail,
+    why: why,
+    stage: stage,
+    beforeCooldown: beforeCool,
+    turns: turns,
+    window: cooldownWindow.length,
+    cooldownDropped: beforeCool.filter((k) => !chosen.some((a) => a.agent_key === k)),
+    final: chosen.map((a) => a.agent_key),
   });
 
   return chosen.slice(0, MAX_AGENTS_PER_MESSAGE);
@@ -1167,9 +1205,12 @@ async function insertMessage(env, msg) {
 /* ===========================================================================
    生成某条用户消息的智能体回复（在 waitUntil 里跑，不阻塞前端）
    =========================================================================== */
-async function runAgents(env, userMessage) {
+/* 先决定"谁来接话"。POST 要立刻把这个结果告诉前端，
+   前端才知道该不该显示"正在输入" —— 否则会转圈 14 秒然后无声消失。 */
+async function pickResponders(env, userMessage) {
   const agents = (await loadAgents(env, true)).filter((a) => a.agent_key !== 'system');
-  if (!agents.length) return;
+  log('agents loaded', { count: agents.length, keys: agents.map((a) => a.agent_key), enabled: agents.map((a) => a.enabled) });
+  if (!agents.length) { log('no enabled agent, abort', { msgId: userMessage.id }); return { chosen: [], recent: [] }; }
 
   const recentRes = await env.DB.prepare(
     'SELECT * FROM messages ORDER BY id DESC LIMIT ?'
@@ -1177,14 +1218,23 @@ async function runAgents(env, userMessage) {
   const recent = ((recentRes && recentRes.results) || []).reverse();
 
   const chosen = decideResponders(userMessage, agents, recent);
-  if (!chosen.length) return;
+  log('agent matched', {
+    msgId: userMessage.id,
+    text: String(userMessage.content || '').slice(0, 40),
+    recentCount: recent.length,
+    chosen: chosen.map((a) => a.agent_key),
+  });
+  if (!chosen.length) log('nobody chosen, no reply will happen', { msgId: userMessage.id });
+  return { chosen: chosen, recent: recent };
+}
 
+async function runResponders(env, chosen, userMessage, recent) {
   for (const agent of chosen) {
     try {
       await runOneAgent(env, agent, userMessage, recent);
     } catch (e) {
       /* 单个智能体失败不影响别人，但必须留下痕迹，否则问题会被静默吞掉 */
-      console.error('[agent failed]', agent.agent_key, String((e && e.stack) || e).slice(0, 400));
+      logErr('runOneAgent failed for ' + agent.agent_key, e);
     }
   }
 }
@@ -1194,8 +1244,25 @@ async function runOneAgent(env, agent, userMessage, recent) {
   const memories = await loadMemories(env, agent.id);
   const modelMessages = await buildModelMessages(env, agent, me, recent, memories);
 
+  log('calling nailong api', {
+    agent: agent.agent_key,
+    model: agent.model || env.NAILONG_MODEL || DEFAULT_MODEL,
+    base: String(env.NAILONG_BASE_URL || DEFAULT_BASE).replace(/\/+$/, ''),
+    hasKey: !!env.NAILONG_API_KEY,
+    memories: memories.length,
+    ctxChars: modelMessages[1].content.length,
+  });
+
   let bubbles = await callModel(env, agent, modelMessages);
-  if (!bubbles || !bubbles.length) bubbles = localFallback(agent, userMessage.content);
+  log('ai response received', {
+    agent: agent.agent_key,
+    bubbles: bubbles ? bubbles.length : 0,
+    sample: bubbles ? bubbles.slice(0, 2) : null,
+  });
+  if (!bubbles || !bubbles.length) {
+    log('ai returned nothing, using local fallback', { agent: agent.agent_key });
+    bubbles = localFallback(agent, userMessage.content);
+  }
 
   /* 图片消息（按 agent 配置决定要不要发、发哪张） */
   if (agent.allow_images) {
@@ -1209,21 +1276,33 @@ async function runOneAgent(env, agent, userMessage, recent) {
 
   /* 逐条落库，中间留一点间隔 —— 前端轮询时气泡会一条条冒出来，像真人打字 */
   let first = true;
+  let saved = 0;
   for (const b of bubbles) {
     if (!first) await new Promise((r) => setTimeout(r, 300 + Math.random() * 450));
     first = false;
-    if (b && typeof b === 'object' && b.__image) {
-      await insertMessage(env, {
-        sender_type: 'agent', sender_id: agent.id, sender_name: agent.display_name,
-        content: '', message_type: 'image', image_key: b.__image.src,
-      });
-    } else if (b && String(b).trim()) {
-      await insertMessage(env, {
-        sender_type: 'agent', sender_id: agent.id, sender_name: agent.display_name,
-        content: String(b).trim(), message_type: 'text',
-      });
+    try {
+      if (b && typeof b === 'object' && b.__image) {
+        log('saving agent message', { agent: agent.agent_key, type: 'image', image: b.__image.src });
+        const row = await insertMessage(env, {
+          sender_type: 'agent', sender_id: agent.id, sender_name: agent.display_name,
+          content: '', message_type: 'image', image_key: b.__image.src,
+        });
+        log('agent message saved', { id: row.id, type: 'image' });
+        saved++;
+      } else if (b && String(b).trim()) {
+        log('saving agent message', { agent: agent.agent_key, type: 'text', text: String(b).slice(0, 40) });
+        const row = await insertMessage(env, {
+          sender_type: 'agent', sender_id: agent.id, sender_name: agent.display_name,
+          content: String(b).trim(), message_type: 'text',
+        });
+        log('agent message saved', { id: row.id, type: 'text' });
+        saved++;
+      }
+    } catch (e) {
+      logErr('insert agent message failed', e);
     }
   }
+  log('agent turn done', { agent: agent.agent_key, saved: saved });
 
   await maybeExtractMemories(env, agent);
 }
@@ -1422,6 +1501,13 @@ async function handleMessages(request, env, url) {
   ).bind(since, limit).all();
   const rows = (res && res.results) || [];
   const mx = await env.DB.prepare('SELECT MAX(id) AS mx FROM messages').first();
+  /* 只在真的有新消息时打日志，否则 2.5 秒一次会把日志刷爆 */
+  if (rows.length) {
+    log('polling returned new message', {
+      since: since, count: rows.length,
+      from: rows.map((m) => m.sender_type + ':' + m.sender_name).slice(0, 6),
+    });
+  }
   return json({
     ok: true,
     messages: rows.map((m) => ({
@@ -1446,12 +1532,23 @@ async function handlePostMessage(request, env, me, ctx) {
   });
 
   /* 智能体在后台生成回复，前端立刻拿到自己的消息。
-     这里的 catch 必须留痕 —— 之前用空 catch 吞掉过一个 ReferenceError，
+     决策放在返回之前做，这样能把 expecting 一起告诉前端：
+     没人会回的时候前端就不该显示"正在输入"。
+     catch 必须留痕 —— 之前用空 catch 吞掉过一个 ReferenceError，
      导致整个"对全体喊话"功能静默失效了很久。 */
-  ctx.waitUntil(runAgents(env, msg).catch((e) => {
-    console.error('[runAgents failed]', String((e && e.stack) || e).slice(0, 400));
-  }));
-  return json({ ok: true, message: { id: msg.id, name: me.display_name, content: content, at: msg.created_at } });
+  log('message saved', { id: msg.id, userId: me.id, name: me.display_name, text: content.slice(0, 40) });
+  const picked = await pickResponders(env, msg);
+  const expecting = picked.chosen.map((a) => a.display_name);
+  if (picked.chosen.length) {
+    ctx.waitUntil(runResponders(env, picked.chosen, msg, picked.recent).catch((e) => {
+      logErr('runResponders failed', e);
+    }));
+  }
+  return json({
+    ok: true,
+    message: { id: msg.id, name: me.display_name, content: content, at: msg.created_at },
+    expecting: expecting,
+  });
 }
 
 /* ===========================================================================
