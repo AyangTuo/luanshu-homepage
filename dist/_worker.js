@@ -1495,9 +1495,10 @@ export default {
 
     if (path.startsWith('/api/')) {
       try {
-        await ensureSchema(env);
-
+        /* 旧的单聊接口不碰数据库，放在建表之前 —— 没绑 D1 时它也能用 */
         if (path === '/api/nailong') return await legacyNailong(request, env);
+
+        await ensureSchema(env);
 
         if (path === '/api/auth/register' && request.method === 'POST') return await handleRegister(request, env);
         if (path === '/api/auth/login' && request.method === 'POST') return await handleLogin(request, env);
