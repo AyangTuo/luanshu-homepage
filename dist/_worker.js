@@ -666,7 +666,7 @@ const DEFAULT_MODEL = 'gpt-4o-mini';
 /* ===========================================================================
    可调配置
    =========================================================================== */
-const MAX_USERS = 6;              /* 最多几个真人账号，到顶就关闭公开注册 */
+const MAX_USERS = 7;              /* 最多几个真人账号，到顶就关闭公开注册 */
 const MAX_AGENTS_PER_MESSAGE = 2; /* 一条用户消息最多触发几个智能体 */
 const CONTEXT_MESSAGES = 40;      /* 给智能体看最近多少条群聊消息 */
 const MEMORY_EVERY = 25;          /* 累积多少条新消息提炼一次长期记忆 */
@@ -1029,10 +1029,10 @@ function decideResponders(userMessage, agents, recent) {
     else if (hit) forced.push(a);
   }
 
-  /* 点名优先；全员喊话时按插嘴概率挑 */
+  /* 点名优先；全员喊话时按插嘴概率挑（回调必须带参数 a，否则 ReferenceError 会被吞掉） */
   let chosen = forced.slice();
   if (!chosen.length && candidates.length) {
-    const willing = candidates.filter(() => Math.random() < Math.max(a0(a), 0.35));
+    const willing = candidates.filter((a) => Math.random() < Math.max(a0(a), 0.35));
     chosen = willing.length ? willing : [candidates[Math.floor(Math.random() * candidates.length)]];
   }
 
@@ -1183,7 +1183,8 @@ async function runAgents(env, userMessage) {
     try {
       await runOneAgent(env, agent, userMessage, recent);
     } catch (e) {
-      /* 单个智能体失败不影响别人 */
+      /* 单个智能体失败不影响别人，但必须留下痕迹，否则问题会被静默吞掉 */
+      console.error('[agent failed]', agent.agent_key, String((e && e.stack) || e).slice(0, 400));
     }
   }
 }
@@ -1444,8 +1445,12 @@ async function handlePostMessage(request, env, me, ctx) {
     reply_to_message_id: body.reply_to_message_id || null,
   });
 
-  /* 智能体在后台生成回复，前端立刻拿到自己的消息 */
-  ctx.waitUntil(runAgents(env, msg).catch(() => {}));
+  /* 智能体在后台生成回复，前端立刻拿到自己的消息。
+     这里的 catch 必须留痕 —— 之前用空 catch 吞掉过一个 ReferenceError，
+     导致整个"对全体喊话"功能静默失效了很久。 */
+  ctx.waitUntil(runAgents(env, msg).catch((e) => {
+    console.error('[runAgents failed]', String((e && e.stack) || e).slice(0, 400));
+  }));
   return json({ ok: true, message: { id: msg.id, name: me.display_name, content: content, at: msg.created_at } });
 }
 
