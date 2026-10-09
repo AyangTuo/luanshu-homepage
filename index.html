@@ -1955,6 +1955,13 @@ html.locked .nl-root{display:none!important}
   border:1px solid #ffffff26;border-radius:20px;padding:10px 14px;transition:border-color .25s}
 .nl-foot input::placeholder{color:#7d867a}
 .nl-foot input:focus{outline:none;border-color:#c8fa75}
+/* @ 候选条 */
+.nl-at{display:flex;gap:6px;padding:8px 10px 0;background:#121712;flex-wrap:wrap}
+.nl-at[hidden]{display:none}
+.nl-at button{font:inherit;font-size:12.5px;color:#16200f;background:#c8fa75;border:0;
+  border-radius:14px;padding:5px 12px;cursor:pointer;transition:background .2s}
+.nl-at button:hover{background:#dcffa5}
+.nl-at button span{opacity:.6;font-size:11px;margin-left:4px}
 .nl-send{font:inherit;font-size:13px;letter-spacing:1px;color:#172012;background:#c8fa75;border:0;
   border-radius:20px;padding:0 16px;cursor:pointer;transition:background .25s}
 .nl-send:hover{background:#dcffa5}
@@ -2005,9 +2012,11 @@ html.locked .nl-root{display:none!important}
 
     <div class="nl-room" id="nl-room" hidden>
       <div class="nl-msgs" id="nl-msgs" role="log" aria-live="polite"></div>
+      <!-- 打 @ 时弹出的小候选，点一下插入 @奶龙 。手动打 @奶龙 一样生效 -->
+      <div class="nl-at" id="nl-at" hidden></div>
       <form class="nl-foot" id="nl-form" novalidate>
         <label class="sr" for="nl-input">说点什么</label>
-        <input id="nl-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="说点什么…">
+        <input id="nl-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="说点什么… （@ 可以叫奶龙）">
         <button class="nl-send" id="nl-send" type="submit">发送</button>
       </form>
     </div>
@@ -2033,6 +2042,7 @@ html.locked .nl-root{display:none!important}
   var elForm = document.getElementById('nl-form');
   var elInput = document.getElementById('nl-input');
   var elSend = document.getElementById('nl-send');
+  var elAt = document.getElementById('nl-at');
   var elEnterForm = document.getElementById('nl-enter-form');
   var elNick = document.getElementById('nl-nick');
   var elEnterMsg = document.getElementById('nl-enter-msg');
@@ -2094,6 +2104,7 @@ html.locked .nl-root{display:none!important}
   var unread = 0;
   var opened = false;
   var renaming = false;       /* true = 正在改昵称，不是首次进入 */
+  var isSending = false;      /* 发送中：挡住连点和 Enter/按钮双触发 */
   var POLL_MS = 2500;
 
   /* ------------------------------------------------------------------
@@ -2158,7 +2169,24 @@ html.locked .nl-root{display:none!important}
     elMsgs.appendChild(d);
   }
 
+  /* ------------------------------------------------------------------
+     去重：每条数据库消息有唯一 id，同一个 id 只渲染一次。
+     ------------------------------------------------------------------
+     重复消息的根因是"乐观显示 + 在途轮询"打架：
+       发送后前端先本地 append 一条，同时把 lastId 推到新消息的 id；
+       但如果此刻正好有一个用旧 lastId 发出的轮询在途，
+       它返回的结果里也包含这条消息，于是又被 append 了一次。
+     用 id 集合兜住就不会重复。注意不能按文本判重 ——
+     不同人真的可能发一模一样的内容。
+     ------------------------------------------------------------------ */
+  var seenIds = {};
+
   function addMessage(m) {
+    if (!m || m.id === undefined || m.id === null) { return; }
+    if (seenIds[m.id]) { return; }        /* 这个 id 已经渲染过了 */
+    seenIds[m.id] = true;
+    if (m.id > lastId) { lastId = m.id; }
+
     var empty = elMsgs.querySelector('.nl-empty');
     if (empty) empty.remove();
 
@@ -2251,7 +2279,8 @@ html.locked .nl-root{display:none!important}
       if (!j.ok) return;
       var arrivedAgent = false;
       (j.messages || []).forEach(function (m) {
-        if (m.id > lastId) lastId = m.id;
+        /* 去重交给 addMessage，这里不要再自己推 lastId，
+           否则重复的那条会被静默跳过、反而看不出问题 */
         addMessage(m);
         if (m.type === 'agent') arrivedAgent = true;
         if (m.type !== 'system' && !(me && m.type === 'user' && m.senderId === me.clientId) && !opened) {
@@ -2347,15 +2376,60 @@ html.locked .nl-root{display:none!important}
     }
     elMsgs.innerHTML = '';
     lastId = 0;
+    seenIds = {};             /* 重新进房间时清空去重表，历史会重新拉一遍 */
     renderEmpty();
     startPoll();
     if (window.innerWidth > 520) { try { elInput.focus(); } catch (e) {} }
   }
 
+  /* ------------------------------------------------------------------
+     @ 候选：打 "@" 就弹出成员，点一下插入 @奶龙
+     ------------------------------------------------------------------
+     第一版不做复杂成员列表，就是一个按钮。
+     手动直接打 "@奶龙" 也完全生效 —— 服务端是按消息内容判断的。
+     ------------------------------------------------------------------ */
+  function hideAt() { elAt.hidden = true; }
+
+  function showAt() {
+    if (!agents.length) { return; }
+    elAt.innerHTML = '';
+    agents.forEach(function (a) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = '@' + a.name;
+      var hint = document.createElement('span');
+      hint.textContent = '必须回复';
+      b.appendChild(hint);
+      b.addEventListener('click', function () {
+        var v = elInput.value;
+        /* 把光标前那截末尾的 @ 换掉，避免出现 "@@奶龙" */
+        v = v.replace(/@[^\s@]*$/, '');
+        elInput.value = v + '@' + a.name + ' ';
+        hideAt();
+        try { elInput.focus(); } catch (e) {}
+      });
+      elAt.appendChild(b);
+    });
+    elAt.hidden = false;
+  }
+
+  elInput.addEventListener('input', function () {
+    var v = elInput.value;
+    /* 只有"光标停在刚打出的 @"时才弹，打完字就收起来 */
+    if (/@[^\s@]*$/.test(v)) { showAt(); } else { hideAt(); }
+  });
+  elInput.addEventListener('blur', function () { setTimeout(hideAt, 180); });
+  elInput.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') { hideAt(); }
+  });
+
   elForm.addEventListener('submit', function (ev) {
     ev.preventDefault();
+    hideAt();
+    if (isSending) { return; }        /* 连点 / Enter 与按钮同时触发时只发一次 */
     var v = elInput.value.trim();
     if (!v) return;
+    isSending = true;
     elInput.value = '';
     elSend.disabled = true;
     post('/api/chat/messages', {
@@ -2363,20 +2437,26 @@ html.locked .nl-root{display:none!important}
       client_id: me.clientId,
       display_name: me.displayName,
     }).then(function (j) {
+      isSending = false;
       elSend.disabled = false;
       if (!j.ok) { elInput.value = v; return; }
-      if (j.message && j.message.id > lastId) lastId = j.message.id;
-      addMessage({ id: j.message.id, type: 'user', senderId: me.clientId, name: me.displayName, content: v, kind: 'text' });
+      /* 乐观显示：只 append 一次。之后轮询再遇到同一个 id 会被 addMessage 挡掉，
+         所以不会出现两条一样的消息。 */
+      addMessage({
+        id: j.message.id, type: 'user', senderId: me.clientId,
+        name: me.displayName, content: v, kind: 'text',
+      });
       /* 只有服务端确认"有人会接话"时才显示正在输入。
-         以前是无条件转 14 秒然后无声消失 —— 那才是"奶龙像是要回却不回"的真正来源。 */
+         服务端说没人回就绝不显示 loading —— 否则就是"转几秒然后什么都没有"。 */
       if (j.expecting && j.expecting.length) {
         showTyping(j.expecting[0]);
-        typingUntil = Date.now() + 20000;
+        typingUntil = Date.now() + 25000;
       } else {
         clearTyping();
         typingUntil = 0;
       }
     }).catch(function () {
+      isSending = false;
       elSend.disabled = false;
       elInput.value = v;
     });

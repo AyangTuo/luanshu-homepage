@@ -670,6 +670,39 @@ const MAX_AGENTS_PER_MESSAGE = 2; /* 一条用户消息最多触发几个智能�
 const CONTEXT_MESSAGES = 40;      /* 给智能体看最近多少条群聊消息 */
 const COOLDOWN_WINDOW = 12;       /* 防刷屏冷却只看最近这么多条（不是整个上下文） */
 const COOLDOWN_MAX_TURNS = 2;     /* 冷却窗口内开口超过这个轮数就先歇一歇（被叫到不受限） */
+
+/* ---------------------------------------------------------------------------
+   「要不要接话」的判断 —— 全部本地规则，不额外调 AI（省 token）
+   ---------------------------------------------------------------------------
+   先算相关度分数，再映射成回复概率，最后按群聊节奏打折。
+   加新智能体：在 AGENT_TOPICS 里加一段关键词即可，调度逻辑不用动。
+   --------------------------------------------------------------------------- */
+const AGENT_TOPICS = {
+  nailong: ['奶龙', '龙', '脚', '屁股', '亲亲', '抱抱', '想人', '可爱', '丑', '龙娘'],
+};
+const MOOD_WORDS = /(哈哈|笑死|无语|难受|烦|累了|气死|开心|难过|救命|离谱|绝了|麻了|呜呜)/;
+const FOOD_WORDS = /(吃|饭|饿|外卖|夜宵|零食|喝|烧烤|火锅|奶茶)/;
+const HAIL_WORDS = /(你们|大家|一起|谁)/;
+
+/* 分数 → 概率。高相关 70~90%，中相关 30~50%，低相关 5~15%
+   floor = 即使群聊很热闹，这个档位也不该低于的概率。
+   没有下限的话，几个折扣连乘会把"高相关"压到几乎不回复 —— 那正是
+   "用户明明在说奶龙，奶龙却一声不吭"的来源。 */
+const RELEVANCE_TIERS = [
+  { min: 5, p: 0.85, floor: 0.60, tier: 'high' },
+  { min: 3, p: 0.70, floor: 0.55, tier: 'high' },
+  { min: 2, p: 0.40, floor: 0.15, tier: 'mid' },
+  { min: 1, p: 0.28, floor: 0.12, tier: 'mid' },
+  { min: 0, p: 0.10, floor: 0.04, tier: 'low' },
+  { min: -999, p: 0.03, floor: 0.01, tier: 'filler' },   /* 纯"哈哈哈哈""哦""嗯" */
+];
+/* 纯附和 / 只有一两个字的消息：不值得接话 */
+const FILLER_ONLY = /^[\s哈呵嘿嘻笑死233hH。.！!？?~～、,，…-]+$/;
+/* 群聊节奏折扣：刚说过、说太多、或大家正聊得起劲，就收敛一点。
+   取最狠的那一个，不连乘 —— 连乘会把高相关压死。 */
+const AFTER_AGENT_MULT = 0.25;    /* 上一条就是它说的 */
+const TOO_MANY_TURNS_MULT = 0.30; /* 冷却窗口内已经开口 >= 3 轮 */
+const BUSY_GROUP_MULT = 0.60;     /* 它上一次开口之后大家又聊了 >= 5 条 */
 const MEMORY_EVERY = 25;          /* 累积多少条新消息提炼一次长期记忆 */
 const MEMORY_KEEP = 12;           /* 每次给智能体带多少条长期记忆 */
 const MAX_CONTENT = 500;          /* 单条消息最大字数 */
@@ -745,6 +778,9 @@ const SCHEMA = [
    已经存在时 ALTER 会报错，忽略即可 —— 这是幂等的。 */
 const MIGRATIONS = [
   `ALTER TABLE agent_memories ADD COLUMN subject_key TEXT`,
+  /* 幂等标记：同一条用户消息最多触发一次智能体回复。
+     并发 / 重复请求 / 刷新重发都靠它挡住。 */
+  `ALTER TABLE messages ADD COLUMN processed_by_agents INTEGER NOT NULL DEFAULT 0`,
 ];
 
 /* ---------------------------------------------------------------------------
@@ -975,71 +1011,93 @@ function pickImageFor(agentKey, text) {
    =========================================================================== */
 function decideResponders(userMessage, agents, recent) {
   const text = String(userMessage.content || '');
-  const forced = [];
-  const candidates = [];
-  const why = {};
-  const hail = /(你们|大家|都|一起|谁)/.test(text);
+  const chosen = [];
+  const info = {};
 
   for (const a of agents) {
-    let hit = false;
-    let reason = 'no-trigger';
-    /* 1) 直接点名 / @ */
-    if (text.includes(a.display_name) || text.includes('@' + a.display_name)) { hit = true; reason = 'named'; }
-    /* 2) 回复的是它说的话 */
-    if (!hit && userMessage.reply_to_message_id) {
-      const target = recent.find((m) => m.id === userMessage.reply_to_message_id);
-      if (target && target.sender_type === 'agent' && target.sender_id === a.id) { hit = true; reason = 'reply-to'; }
+    const name = a.display_name;
+    /* ---- 必须回复：@奶龙 或 直接叫名字。跳过所有概率判断 ---- */
+    const at = text.includes('@' + name);
+    if (at || text.includes(name)) {
+      chosen.push(a);
+      info[a.agent_key] = (at ? 'AT-FORCED' : 'name-forced');
+      continue;
     }
-    /* 3) 对全体喊话 */
-    if (!hit && hail) { candidates.push(a); reason = 'hail'; }
-    else if (hit) forced.push(a);
-    why[a.agent_key] = reason;
+    /* ---- 其余走相关度判断 ---- */
+    const r = relevanceScore(text, a, recent, userMessage);
+    const tier = RELEVANCE_TIERS.find((t) => r.score >= t.min);
+    const mult = willingnessMult(a, recent);
+    /* 先按节奏打折，再兜住下限 —— 保证高相关不会被折扣压没 */
+    const p = Math.max(tier.floor, Math.min(0.95, tier.p * mult));
+    const hit = Math.random() < p;
+    if (hit) chosen.push(a);
+    info[a.agent_key] = (hit ? 'reply' : 'skip') + ' ' + tier.tier +
+      ' score=' + r.score + ' p=' + p.toFixed(2) +
+      ' [' + r.why.join('+') + ']' + (mult < 1 ? ' mult=' + mult : '');
   }
 
-  /* 点名优先；全员喊话时按插嘴概率挑（回调必须带参数 a，否则 ReferenceError 会被吞掉） */
-  let chosen = forced.slice();
-  let stage = forced.length ? 'forced' : '';
-  if (!chosen.length && candidates.length) {
-    const willing = candidates.filter((a) => Math.random() < Math.max(a0(a), 0.35));
-    chosen = willing.length ? willing : [candidates[Math.floor(Math.random() * candidates.length)]];
-    stage = 'hail-pick';
+  const out = chosen.slice(0, MAX_AGENTS_PER_MESSAGE);
+  log('decideResponders', { text: text.slice(0, 30), info: info, final: out.map((a) => a.agent_key) });
+  return out;
+}
+
+/* 相关度打分：本地规则，不调 AI */
+function relevanceScore(text, agent, recent, userMessage) {
+  let score = 0;
+  const why = [];
+
+  /* 0) 纯附和 / 太短 —— 不值得接话，直接压到底 */
+  if (FILLER_ONLY.test(text) || text.length <= 2) { return { score: -999, why: ['filler'] }; }
+
+  /* 1) 命中这个智能体的话题/梗词 —— 权重最高 */
+  const topics = AGENT_TOPICS[agent.agent_key] || [];
+  if (topics.some((t) => text.includes(t))) { score += 3; why.push('topic'); }
+
+  /* 2) 回复的是它说的话 */
+  if (userMessage.reply_to_message_id) {
+    const t = recent.find((m) => m.id === userMessage.reply_to_message_id);
+    if (t && t.sender_type === 'agent' && t.sender_id === agent.id) { score += 3; why.push('reply-to'); }
   }
 
-  /* 没人被点名：按各自概率随机插嘴（这就是"偶尔插一句"） */
-  if (!chosen.length) {
-    for (const a of agents) {
-      if (Math.random() < (a.reply_probability || 0)) chosen.push(a);
-    }
-    stage = 'random-interject';
+  /* 3) 上一条就是它说的 —— 有人在接它的话 */
+  const last = recent[recent.length - 1];
+  if (last && last.sender_type === 'agent' && last.sender_id === agent.id) { score += 2; why.push('after-agent'); }
+
+  /* 4) 话题还在它身上（最近 8 条里它开过口） */
+  if (recent.slice(-8).some((m) => m.sender_type === 'agent' && m.sender_id === agent.id)) { score += 1; why.push('warm'); }
+
+  /* 5) 情绪明显，可以插一句 */
+  if (MOOD_WORDS.test(text)) { score += 1; why.push('mood'); }
+
+  /* 6) 吃的 —— 奶龙爱吃，中低相关 */
+  if (FOOD_WORDS.test(text)) { score += 1; why.push('food'); }
+
+  /* 7) 对全体喊话 */
+  if (HAIL_WORDS.test(text)) { score += 2; why.push('hail'); }
+
+  return { score: score, why: why };
+}
+
+/* 群聊节奏折扣：刚说过、说太多、或大家正聊得热闹，就收敛一点。
+   取【最狠的那一个】，不连乘 —— 连乘会把高相关也压到几乎不回复。 */
+function willingnessMult(agent, recent) {
+  const factors = [1];
+  const last = recent[recent.length - 1];
+  if (last && last.sender_type === 'agent' && last.sender_id === agent.id) { factors.push(AFTER_AGENT_MULT); }
+
+  const window = recent.slice(-COOLDOWN_WINDOW);
+  if (speakingTurns(window, agent.id) >= COOLDOWN_MAX_TURNS + 1) { factors.push(TOO_MANY_TURNS_MULT); }
+
+  /* 它上一次开口之后，大家又聊了几句 —— 说明话题已经不在它身上 */
+  let sinceLast = 0;
+  for (let i = recent.length - 1; i >= 0; i--) {
+    const m = recent[i];
+    if (m.sender_type === 'agent' && m.sender_id === agent.id) break;
+    if (m.sender_type === 'user') sinceLast++;
   }
+  if (sinceLast >= 5) { factors.push(BUSY_GROUP_MULT); }
 
-  const beforeCool = chosen.map((a) => a.agent_key);
-  /* 冷却：按「发言轮次」算 —— 连续的气泡属于同一轮，不能算成说了好几次。
-     窗口是最近 COOLDOWN_WINDOW 条（和注释一致，之前错用了整个 40 条上下文，
-     导致奶龙开口两轮后会静默很久）。
-     被「点名」或被「全体喊话」叫到的都属于"必须回复"，一律豁免冷却。
-     之前只豁免了 forced，hail 选中的会被误杀 —— 这就是"你们都在吗"没人应的原因。 */
-  const summoned = {};
-  for (const a of forced) summoned[a.id] = true;
-  if (stage === 'hail-pick') { for (const a of chosen) summoned[a.id] = true; }
-  const cooldownWindow = recent.slice(-COOLDOWN_WINDOW);
-  const turns = {};
-  for (const a of agents) turns[a.agent_key] = speakingTurns(cooldownWindow, a.id);
-  chosen = chosen.filter((a) => turns[a.agent_key] < COOLDOWN_MAX_TURNS || summoned[a.id]);
-
-  log('decideResponders', {
-    text: text.slice(0, 30),
-    hail: hail,
-    why: why,
-    stage: stage,
-    beforeCooldown: beforeCool,
-    turns: turns,
-    window: cooldownWindow.length,
-    cooldownDropped: beforeCool.filter((k) => !chosen.some((a) => a.agent_key === k)),
-    final: chosen.map((a) => a.agent_key),
-  });
-
-  return chosen.slice(0, MAX_AGENTS_PER_MESSAGE);
+  return Math.min.apply(null, factors);
 }
 
 /* 数一个智能体在最近这些消息里"开口"了几轮（连续气泡算一轮） */
@@ -1052,8 +1110,6 @@ function speakingTurns(recent, agentId) {
   }
   return turns;
 }
-function a0(a) { return a.reply_probability || 0; }
-
 /* 按名字找智能体（全员喊话时给每个人算概率用） */
 function agentByName(agents, name) {
   return agents.find((a) => a.display_name === name);
@@ -1129,9 +1185,18 @@ const LOCAL_LINES = {
   ],
 };
 
+/* 兜底台词：模型挂了也要说点什么，绝不静默消失 */
+const PANIC_LINES = {
+  nailong: [['奶龙刚刚脑袋卡住了🥺'], ['人等一下 奶龙网线被吃了😭'], ['？', '奶龙刚走神了 再说一遍']],
+};
+
 function localFallback(agent, userText) {
   const bank = LOCAL_LINES[agent.agent_key];
-  if (!bank) return ['（' + agent.display_name + '没说话）'];
+  if (!bank) {
+    const panic = PANIC_LINES[agent.agent_key];
+    return panic ? panic[Math.floor(Math.random() * panic.length)].slice()
+      : ['（' + agent.display_name + '刚刚没接上话）'];
+  }
   const intent = detectIntent(userText);
   if (agent.agent_key === 'nailong' && (intent === 'insult' || intent === 'stop')) {
     return ['奶龙滚了', '奶龙又滚回来了🥺'];
@@ -1205,15 +1270,27 @@ async function runOneAgent(env, agent, userMessage, recent) {
     ctxChars: modelMessages[1].content.length,
   });
 
-  let bubbles = await callModel(env, agent, modelMessages);
+  /* 决定要回复了，就必须在这个函数里落至少一条消息。
+     任何一步炸掉都退到兜底台词 —— 绝不让前端"加载几秒然后什么都没有"。 */
+  let bubbles = null;
+  try {
+    bubbles = await callModel(env, agent, modelMessages);
+  } catch (e) {
+    logErr('callModel threw', e);
+    bubbles = null;
+  }
   log('ai response received', {
     agent: agent.agent_key,
     bubbles: bubbles ? bubbles.length : 0,
     sample: bubbles ? bubbles.slice(0, 2) : null,
   });
   if (!bubbles || !bubbles.length) {
-    log('ai returned nothing, using local fallback', { agent: agent.agent_key });
+    log('ai failed or empty, using fallback line', { agent: agent.agent_key });
     bubbles = localFallback(agent, userMessage.content);
+  }
+  if (!Array.isArray(bubbles) || !bubbles.length) {
+    const panic = PANIC_LINES[agent.agent_key];
+    bubbles = panic ? panic[0].slice() : ['（' + agent.display_name + '刚刚没接上话）'];
   }
 
   /* 图片消息（按 agent 配置决定要不要发、发哪张） */
@@ -1252,6 +1329,20 @@ async function runOneAgent(env, agent, userMessage, recent) {
       }
     } catch (e) {
       logErr('insert agent message failed', e);
+    }
+  }
+
+  /* 最后的保险：一条都没写进去的话，硬写一条兜底，绝不留空白 */
+  if (!saved) {
+    try {
+      await insertMessage(env, {
+        sender_type: 'agent', sender_id: agent.id, sender_name: agent.display_name,
+        content: '奶龙刚刚脑袋卡住了🥺', message_type: 'text',
+      });
+      saved = 1;
+      log('wrote panic fallback after total failure', { agent: agent.agent_key });
+    } catch (e) {
+      logErr('panic fallback also failed', e);
     }
   }
   log('agent turn done', { agent: agent.agent_key, saved: saved });
@@ -1458,6 +1549,19 @@ async function handlePostMessage(request, env, ctx) {
      catch 必须留痕 —— 之前用空 catch 吞掉过一个 ReferenceError，
      导致整个"对全体喊话"功能静默失效了很久。 */
   log('message saved', { id: msg.id, clientId: clientId, name: nickname, text: content.slice(0, 40) });
+
+  /* 幂等：同一条 message.id 最多触发一次智能体。
+     用一条原子 UPDATE 抢占标记 —— 并发/重复请求里只有一个能抢到 changes=1。
+     抢不到就直接返回，绝不再调一次 AI。 */
+  const claim = await env.DB.prepare(
+    'UPDATE messages SET processed_by_agents = 1 WHERE id = ? AND processed_by_agents = 0'
+  ).bind(msg.id).run();
+  const firstTime = !!(claim && claim.meta && claim.meta.changes);
+  if (!firstTime) {
+    log('already processed, skip agents', { id: msg.id });
+    return json({ ok: true, message: { id: msg.id, name: nickname, content: content, at: msg.created_at }, expecting: [] });
+  }
+
   const picked = await pickResponders(env, msg);
   const expecting = picked.chosen.map((a) => a.display_name);
   if (picked.chosen.length) {
