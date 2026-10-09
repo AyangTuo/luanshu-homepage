@@ -2292,6 +2292,7 @@ html.locked .nl-root{display:none!important}
     ev.preventDefault();
     var nick = cleanNick(elNick.value);
     if (!nick) { showEnterMsg('先给自己起个名字'); return; }
+    showEnterMsg('');   /* 上一次的提示先清掉，别让旧的报错留在新一次尝试旁边 */
 
     var id = clientId();
     elEnterSubmit.disabled = true;
