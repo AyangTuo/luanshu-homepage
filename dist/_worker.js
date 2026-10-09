@@ -1490,10 +1490,22 @@ async function handleBootstrap(request, env) {
 async function handleMessages(request, env, url) {
   const since = parseInt(url.searchParams.get('since') || '0', 10) || 0;
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '80', 10) || 80, 200);
-  const res = await env.DB.prepare(
-    'SELECT * FROM messages WHERE id > ? ORDER BY id ASC LIMIT ?'
-  ).bind(since, limit).all();
-  const rows = (res && res.results) || [];
+
+  /* since=0 是"首次进房间"：要给【最近】的一批，不是最早的一批。
+     之前一律 ORDER BY id ASC，房间超过 80 条以后新人进来看到的是远古消息，
+     最新的要爬好几轮才追得上 —— 表现就是"我发的消息怎么不显示"。 */
+  let rows;
+  if (since > 0) {
+    const res = await env.DB.prepare(
+      'SELECT * FROM messages WHERE id > ? ORDER BY id ASC LIMIT ?'
+    ).bind(since, limit).all();
+    rows = (res && res.results) || [];
+  } else {
+    const res = await env.DB.prepare(
+      'SELECT * FROM messages ORDER BY id DESC LIMIT ?'
+    ).bind(limit).all();
+    rows = ((res && res.results) || []).reverse();
+  }
   const mx = await env.DB.prepare('SELECT MAX(id) AS mx FROM messages').first();
   /* 只在真的有新消息时打日志，否则 2.5 秒一次会把日志刷爆 */
   if (rows.length) {
