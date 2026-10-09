@@ -735,6 +735,8 @@ const SCHEMA = [
      updated_at TEXT NOT NULL
    )`,
   `CREATE INDEX IF NOT EXISTS idx_messages_id ON messages (id)`,
+  /* sender_id 现在存 client_id，进房间时要用它判重，加个索引免得全表扫 */
+  `CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages (sender_type, sender_id)`,
   `CREATE INDEX IF NOT EXISTS idx_memories_agent ON agent_memories (agent_id, importance)`,
 ];
 

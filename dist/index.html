@@ -2103,6 +2103,13 @@ html.locked .nl-root{display:none!important}
     opts = opts || {};
     opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
     opts.credentials = 'same-origin';
+    /* 必须带超时：线上偶尔会有请求挂住不返回。
+       没有超时的话 fetch 永远不 settle，按钮会一直禁用，用户就卡死在这一步了。 */
+    if (!opts.signal && window.AbortController) {
+      var ac = new AbortController();
+      opts.signal = ac.signal;
+      setTimeout(function () { try { ac.abort(); } catch (e) {} }, opts.timeoutMs || 20000);
+    }
     return fetch(path, opts).then(function (r) {
       return r.json().catch(function () { return { ok: false, error: '返回格式不对' }; })
         .then(function (j) { j.__status = r.status; return j; });
