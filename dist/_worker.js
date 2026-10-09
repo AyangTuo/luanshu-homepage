@@ -666,20 +666,22 @@ const DEFAULT_MODEL = 'gpt-4o-mini';
 /* ===========================================================================
    可调配置
    =========================================================================== */
-const MAX_USERS = 7;              /* 最多几个真人账号，到顶就关闭公开注册 */
 const MAX_AGENTS_PER_MESSAGE = 2; /* 一条用户消息最多触发几个智能体 */
 const CONTEXT_MESSAGES = 40;      /* 给智能体看最近多少条群聊消息 */
 const COOLDOWN_WINDOW = 12;       /* 防刷屏冷却只看最近这么多条（不是整个上下文） */
 const COOLDOWN_MAX_TURNS = 2;     /* 冷却窗口内开口超过这个轮数就先歇一歇（被叫到不受限） */
 const MEMORY_EVERY = 25;          /* 累积多少条新消息提炼一次长期记忆 */
 const MEMORY_KEEP = 12;           /* 每次给智能体带多少条长期记忆 */
-const SESSION_DAYS = 30;
-const MAX_CONTENT = 500;
+const MAX_CONTENT = 500;          /* 单条消息最大字数 */
 const MAX_BUBBLES = 4;
-const USERNAME_RE = /^[a-zA-Z0-9_]{2,20}$/;
+/* 没有账号系统了：身份 = 浏览器生成的 client_id + 昵称。
+   这里只管昵称长度和发消息的最小间隔（防止刷屏把 AI 调用打爆）。 */
+const NICK_MAX = 12;
+const POST_COOLDOWN_MS = 1200;
 
 /* ===========================================================================
    D1 schema —— 首次请求自动建表，不需要手工跑 SQL
+   users / sessions 两张表保留不动（已经不用了，但不删，避免动到现有数据）。
    =========================================================================== */
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -726,6 +728,7 @@ const SCHEMA = [
      agent_id INTEGER NOT NULL,
      subject_type TEXT NOT NULL,
      subject_id INTEGER,
+     subject_key TEXT,
      memory_text TEXT NOT NULL,
      importance INTEGER NOT NULL DEFAULT 3,
      created_at TEXT NOT NULL,
@@ -733,6 +736,13 @@ const SCHEMA = [
    )`,
   `CREATE INDEX IF NOT EXISTS idx_messages_id ON messages (id)`,
   `CREATE INDEX IF NOT EXISTS idx_memories_agent ON agent_memories (agent_id, importance)`,
+];
+
+/* 老库已经有 agent_memories 了，CREATE TABLE IF NOT EXISTS 不会补列，
+   所以单独补一次 subject_key（client_id 是 UUID 字符串，不能塞进 INTEGER 的 subject_id）。
+   已经存在时 ALTER 会报错，忽略即可 —— 这是幂等的。 */
+const MIGRATIONS = [
+  `ALTER TABLE agent_memories ADD COLUMN subject_key TEXT`,
 ];
 
 /* ---------------------------------------------------------------------------
@@ -871,83 +881,19 @@ function safeEqual(a, b) {
 }
 
 /* ===========================================================================
-   密码哈希（PBKDF2-SHA256，绝不存明文）
+   身份：没有账号系统
+   ---------------------------------------------------------------------------
+   每个浏览器第一次进来时自己生成一个 client_id（UUID）存在 localStorage，
+   以后一直用它当身份；昵称只是显示名，可以随时改。
+   两个人取一样的昵称也不会混在一起 —— 区分靠 client_id。
    =========================================================================== */
-const PBKDF2_ITER = 100000;
+const CLIENT_ID_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-async function hashPassword(password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITER, hash: 'SHA-256' }, key, 256);
-  return 'pbkdf2$' + PBKDF2_ITER + '$' + b64(salt) + '$' + b64(bits);
-}
-
-async function verifyPassword(password, stored) {
-  const parts = String(stored || '').split('$');
-  if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false;
-  const iter = parseInt(parts[1], 10);
-  if (!iter || iter < 1000) return false;
-  let salt;
-  try { salt = unb64(parts[2]); } catch (e) { return false; }
-  const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: salt, iterations: iter, hash: 'SHA-256' }, key, 256);
-  return safeEqual(b64(bits), parts[3]);
-}
-
-/* ===========================================================================
-   会话（HttpOnly Cookie + sessions 表，刷新后保持登录）
-   =========================================================================== */
-const COOKIE = 'lsc_session';
-
-function readCookie(request, name) {
-  const raw = request.headers.get('cookie') || '';
-  const m = raw.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
-  return m ? decodeURIComponent(m[1]) : '';
-}
-
-function sessionCookie(token, maxAge, secure) {
-  return COOKIE + '=' + encodeURIComponent(token)
-    + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + maxAge
-    + (secure ? '; Secure' : '');
-}
-
-async function createSession(env, userId, request) {
-  const token = randomToken();
-  const tokenHash = await sha256Hex(token);
-  const created = nowISO();
-  const expires = new Date(Date.now() + SESSION_DAYS * 86400000).toISOString();
-  await env.DB.prepare(
-    'INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)'
-  ).bind(tokenHash, userId, created, expires).run();
-  const secure = new URL(request.url).protocol === 'https:';
-  return sessionCookie(token, SESSION_DAYS * 86400, secure);
-}
-
-async function currentUser(request, env) {
-  const token = readCookie(request, COOKIE);
-  if (!token) return null;
-  const tokenHash = await sha256Hex(token);
-  const row = await env.DB.prepare(
-    'SELECT s.user_id, s.expires_at, u.username, u.display_name, u.created_at FROM sessions s ' +
-    'JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?'
-  ).bind(tokenHash).first();
-  if (!row) return null;
-  if (row.expires_at && row.expires_at < nowISO()) {
-    await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
-    return null;
-  }
-  return { id: row.user_id, username: row.username, display_name: row.display_name, created_at: row.created_at };
-}
-
-async function destroySession(request, env) {
-  const token = readCookie(request, COOKIE);
-  if (!token) return;
-  const tokenHash = await sha256Hex(token);
-  await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
+/* 昵称：去空格、限长、不能为空 */
+function cleanNickname(raw) {
+  const s = String(raw == null ? '' : raw).replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  return s.length > NICK_MAX ? s.slice(0, NICK_MAX) : s;
 }
 
 /* ===========================================================================
@@ -960,6 +906,10 @@ async function ensureSchema(env) {
   if (schemaReady) return schemaReady;
   schemaReady = (async () => {
     for (const sql of SCHEMA) await env.DB.prepare(sql).run();
+    /* 补列迁移：已经加过就报错，忽略即可 */
+    for (const sql of MIGRATIONS) {
+      try { await env.DB.prepare(sql).run(); } catch (e) { /* 列已存在 */ }
+    }
     const created = nowISO();
     for (const a of AGENT_SEEDS) {
       const prompt = (a.identity || '') + '\n\n---\n\n' + GROUP_LAYER;
@@ -1378,18 +1328,22 @@ async function maybeExtractMemories(env, agent) {
     if (!text || text.length > 60) continue;
     const st = it.subject_type === 'group' ? 'group' : 'user';
     const subj = String(it.subject || '').trim();
-    let subjectId = null;
+    /* 没有 users 表了：记忆绑定到 client_id。
+       模型只给得出昵称，所以用 messages 里最近用这个昵称说过话的 sender_id 反查
+       —— sender_id 现在存的就是 client_id。改了昵称也不影响旧记忆的归属。 */
+    let subjectKey = null;
     if (st === 'user' && subj) {
-      const u = await env.DB.prepare('SELECT id FROM users WHERE display_name = ? OR username = ?')
-        .bind(subj, subj).first();
-      if (u) subjectId = u.id;
+      const row = await env.DB.prepare(
+        "SELECT sender_id FROM messages WHERE sender_type='user' AND sender_name=? AND sender_id IS NOT NULL ORDER BY id DESC LIMIT 1"
+      ).bind(subj).first();
+      if (row && row.sender_id) subjectKey = String(row.sender_id);
     }
     let imp = parseInt(it.importance, 10);
     if (!imp || imp < 1 || imp > 5) imp = 3;
     await env.DB.prepare(
-      'INSERT INTO agent_memories (agent_id, subject_type, subject_id, memory_text, importance, created_at, updated_at) ' +
-      'VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).bind(agent.id, st, subjectId, text, imp, now, now).run();
+      'INSERT INTO agent_memories (agent_id, subject_type, subject_id, subject_key, memory_text, importance, created_at, updated_at) ' +
+      'VALUES (?, ?, NULL, ?, ?, ?, ?, ?)'
+    ).bind(agent.id, st, subjectKey, text, imp, now, now).run();
   }
 }
 
@@ -1402,94 +1356,41 @@ function validContent(s) {
   return t.length > MAX_CONTENT ? t.slice(0, MAX_CONTENT) : t;
 }
 
-async function handleRegister(request, env) {
+/* 进聊天室：客户端只需要一个昵称，没有密码、没有注册。
+   第一次进来会顺带写一条系统消息，让房间里的人知道多了个人。 */
+async function handleEnter(request, env) {
   let body;
   try { body = await request.json(); } catch (e) { return json({ ok: false, error: '请求格式不对' }, 400); }
 
-  const username = String(body.username || '').trim();
-  const display = String(body.display_name || '').trim() || username;
-  const password = String(body.password || '');
+  const nickname = cleanNickname(body.display_name);
+  if (!nickname) return json({ ok: false, error: '先给自己起个名字' }, 400);
 
-  if (!USERNAME_RE.test(username)) return json({ ok: false, error: '用户名只能 2-20 位字母、数字或下划线' }, 400);
-  if (display.length < 1 || display.length > 16) return json({ ok: false, error: '昵称请控制在 1-16 个字' }, 400);
-  if (password.length < 6) return json({ ok: false, error: '密码至少 6 位' }, 400);
+  const clientId = String(body.client_id || '').trim();
+  if (!CLIENT_ID_RE.test(clientId)) return json({ ok: false, error: '客户端标识无效，刷新页面重试' }, 400);
 
-  /* 先查重再查名额：房间满了的时候，重复用户名应该提示"已被占用"而不是"名额已满" */
-  const dup = await env.DB.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
-  if (dup) return json({ ok: false, error: '这个用户名已经有人用了' }, 409);
-
-  const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM users').first();
-  if ((cnt && cnt.n) >= MAX_USERS) {
-    return json({ ok: false, error: '名额已满（最多 ' + MAX_USERS + ' 人），用已有账号登录吧' }, 403);
+  /* 加入消息也挂上 sender_id=client_id。
+     这样"这个人来过没有"只需要查 sender_id —— 之前只查 user 消息，
+     导致还没发言的人反复进进出出会刷出一串"加入了聊天室"。 */
+  const seen = await env.DB.prepare(
+    'SELECT id FROM messages WHERE sender_id = ? LIMIT 1'
+  ).bind(clientId).first();
+  if (!seen) {
+    await insertMessage(env, {
+      sender_type: 'system', sender_id: clientId, sender_name: '系统',
+      content: nickname + ' 加入了聊天室', message_type: 'system',
+    });
   }
-
-  const hash = await hashPassword(password);
-  const created = nowISO();
-  let res;
-  try {
-    res = await env.DB.prepare(
-      'INSERT INTO users (username, display_name, password_hash, created_at) VALUES (?, ?, ?, ?)'
-    ).bind(username, display, hash, created).run();
-  } catch (e) {
-    return json({ ok: false, error: '注册失败，换个用户名试试' }, 409);
-  }
-
-  const userId = res.meta.last_row_id;
-  const cookie = await createSession(env, userId, request);
-  await insertMessage(env, {
-    sender_type: 'system', sender_id: null, sender_name: '系统',
-    content: display + ' 加入了聊天室', message_type: 'system',
-  });
-  return new Response(JSON.stringify({
-    ok: true, user: { id: userId, username: username, display_name: display },
-  }), {
-    status: 200,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'set-cookie': cookie, 'cache-control': 'no-store' },
-  });
+  return json({ ok: true, user: { client_id: clientId, display_name: nickname } });
 }
 
-async function handleLogin(request, env) {
-  let body;
-  try { body = await request.json(); } catch (e) { return json({ ok: false, error: '请求格式不对' }, 400); }
-  const username = String(body.username || '').trim();
-  const password = String(body.password || '');
-  const row = await env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first();
-  const ok = row ? await verifyPassword(password, row.password_hash) : false;
-  if (!ok) return json({ ok: false, error: '用户名或密码不对' }, 401);
-
-  const cookie = await createSession(env, row.id, request);
-  return new Response(JSON.stringify({
-    ok: true, user: { id: row.id, username: row.username, display_name: row.display_name },
-  }), {
-    status: 200,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'set-cookie': cookie, 'cache-control': 'no-store' },
-  });
-}
-
-async function handleLogout(request, env) {
-  await destroySession(request, env);
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'set-cookie': sessionCookie('', 0, new URL(request.url).protocol === 'https:'),
-      'cache-control': 'no-store',
-    },
-  });
-}
-
-async function handleBootstrap(request, env, me) {
+async function handleBootstrap(request, env) {
   const agents = (await loadAgents(env, true)).filter((a) => a.agent_key !== 'system');
-  const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM users').first();
   const mx = await env.DB.prepare('SELECT MAX(id) AS mx FROM messages').first();
   return json({
     ok: true,
-    me: me ? { id: me.id, username: me.username, display_name: me.display_name } : null,
     agents: agents.map(publicAgent),
-    userCount: (cnt && cnt.n) || 0,
-    maxUsers: MAX_USERS,
-    registrationOpen: ((cnt && cnt.n) || 0) < MAX_USERS,
     latestId: (mx && mx.mx) || 0,
+    maxNickname: NICK_MAX,
   });
 }
 
@@ -1519,14 +1420,32 @@ async function handleMessages(request, env, url) {
   });
 }
 
-async function handlePostMessage(request, env, me, ctx) {
+async function handlePostMessage(request, env, ctx) {
   let body;
   try { body = await request.json(); } catch (e) { return json({ ok: false, error: '请求格式不对' }, 400); }
   const content = validContent(body.content);
   if (!content) return json({ ok: false, error: '说点什么吧' }, 400);
 
+  /* 身份完全来自客户端：client_id 当 sender_id，昵称当 sender_name。
+     昵称变了不影响历史记录里旧消息的 sender_name。 */
+  const clientId = String(body.client_id || '').trim();
+  if (!CLIENT_ID_RE.test(clientId)) return json({ ok: false, error: '客户端标识无效，刷新页面重试' }, 400);
+  const nickname = cleanNickname(body.display_name);
+  if (!nickname) return json({ ok: false, error: '先给自己起个名字' }, 400);
+
+  /* 限流：同一个 client_id 不能在 1.2 秒内连发，防止刷屏把 AI 调用打爆 */
+  const last = await env.DB.prepare(
+    "SELECT created_at FROM messages WHERE sender_type='user' AND sender_id=? ORDER BY id DESC LIMIT 1"
+  ).bind(clientId).first();
+  if (last && last.created_at) {
+    const gap = Date.now() - new Date(last.created_at).getTime();
+    if (gap >= 0 && gap < POST_COOLDOWN_MS) {
+      return json({ ok: false, error: '慢一点，别刷屏', retryIn: POST_COOLDOWN_MS - gap }, 429);
+    }
+  }
+
   const msg = await insertMessage(env, {
-    sender_type: 'user', sender_id: me.id, sender_name: me.display_name,
+    sender_type: 'user', sender_id: clientId, sender_name: nickname,
     content: content, message_type: 'text',
     reply_to_message_id: body.reply_to_message_id || null,
   });
@@ -1536,7 +1455,7 @@ async function handlePostMessage(request, env, me, ctx) {
      没人会回的时候前端就不该显示"正在输入"。
      catch 必须留痕 —— 之前用空 catch 吞掉过一个 ReferenceError，
      导致整个"对全体喊话"功能静默失效了很久。 */
-  log('message saved', { id: msg.id, userId: me.id, name: me.display_name, text: content.slice(0, 40) });
+  log('message saved', { id: msg.id, clientId: clientId, name: nickname, text: content.slice(0, 40) });
   const picked = await pickResponders(env, msg);
   const expecting = picked.chosen.map((a) => a.display_name);
   if (picked.chosen.length) {
@@ -1546,7 +1465,7 @@ async function handlePostMessage(request, env, me, ctx) {
   }
   return json({
     ok: true,
-    message: { id: msg.id, name: me.display_name, content: content, at: msg.created_at },
+    message: { id: msg.id, name: nickname, content: content, at: msg.created_at },
     expecting: expecting,
   });
 }
@@ -1602,21 +1521,11 @@ export default {
 
         await ensureSchema(env);
 
-        if (path === '/api/auth/register' && request.method === 'POST') return await handleRegister(request, env);
-        if (path === '/api/auth/login' && request.method === 'POST') return await handleLogin(request, env);
-        if (path === '/api/auth/logout' && request.method === 'POST') return await handleLogout(request, env);
-
-        if (path === '/api/chat/bootstrap') {
-          return await handleBootstrap(request, env, await currentUser(request, env));
-        }
-
-        /* 以下都要登录 */
-        const me = await currentUser(request, env);
-        if (!me) return json({ ok: false, error: '请先登录', needLogin: true }, 401);
-
-        if (path === '/api/auth/me') return json({ ok: true, user: { id: me.id, username: me.username, display_name: me.display_name } });
+        /* 没有账号系统：进房间只要一个昵称，读消息完全公开 */
+        if (path === '/api/chat/enter' && request.method === 'POST') return await handleEnter(request, env);
+        if (path === '/api/chat/bootstrap') return await handleBootstrap(request, env);
         if (path === '/api/chat/messages' && request.method === 'GET') return await handleMessages(request, env, url);
-        if (path === '/api/chat/messages' && request.method === 'POST') return await handlePostMessage(request, env, me, ctx);
+        if (path === '/api/chat/messages' && request.method === 'POST') return await handlePostMessage(request, env, ctx);
 
         return json({ ok: false, error: 'no such api' }, 404);
       } catch (e) {
